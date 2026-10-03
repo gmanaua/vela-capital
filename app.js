@@ -679,6 +679,15 @@ function syncSeg() {
   panel.addEventListener('click', (e) => { if (e.target === panel) closeTesis(); });
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && panel.classList.contains('open')) closeTesis(); });
 
+  // Compartir: hoja nativa del móvil o, si no existe, copiar el enlace
+  const toast = (t) => { const el = document.getElementById('toast'); el.textContent = t; el.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove('show'), 2200); };
+  document.querySelectorAll('[data-share]').forEach((b) => b.addEventListener('click', async () => {
+    const url = 'https://gmanaua.github.io/vela-capital/';
+    const data = { title: 'Vela Capital Management', text: 'Rumbo al largo plazo. Mi cartera personal, semana a semana.', url };
+    if (navigator.share && matchMedia('(pointer: coarse)').matches) { try { await navigator.share(data); } catch {} return; }
+    try { await navigator.clipboard.writeText(url); toast('Enlace copiado'); } catch { prompt('Copia el enlace:', url); }
+  }));
+
   // Menú
   const menu = document.getElementById('menu'), mbtn = document.getElementById('menuBtn');
   const toggleMenu = (open) => {

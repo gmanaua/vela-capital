@@ -269,6 +269,10 @@ body.loading main section:not(.hero),body.failed main section:not(.hero){visibil
 .sheet-a .burger i::after{content:"";display:block;width:16px;height:1px;background:var(--ink);transform:rotate(90deg)}
 .tesis iframe{flex:1;width:100%;border:0;background:var(--white)}
 @media (max-width:600px){.sheet-a .ext{display:none}}
+button.li{background:none;border:0;border-bottom:1px solid var(--ink);cursor:pointer;font:inherit;font-size:14px}
+.toast{position:fixed;z-index:90;left:50%;bottom:24px;transform:translate(-50%,12px);background:var(--ink);color:var(--white);padding:10px 14px;font-size:14px;opacity:0;transition:opacity .25s,transform .25s;pointer-events:none}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+@media (max-width:600px){.share-top{display:none}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
 </style>
 </head>
@@ -278,6 +282,7 @@ body.loading main section:not(.hero),body.failed main section:not(.hero){visibil
 <header class="top">
   <a class="mark" href="#inicio"><img src="assets/logo.png" alt="" width="38" height="25">Vela Capital Management</a>
   <div class="top-r">
+    <button class="ghost share-top" data-share type="button">Compartir</button>
     <button class="ghost" data-lockbtn>Ver importes</button>
     <button class="burger" id="menuBtn" aria-label="Menú" aria-expanded="false" aria-controls="menu"><i></i></button>
   </div>
@@ -295,7 +300,7 @@ body.loading main section:not(.hero),body.failed main section:not(.hero){visibil
     <a href="#radar">En el radar</a>
     <a href="#privado">Patrimonio</a>
   </nav>
-  <div class="foot"><span>Actualizado el <span data-updated></span></span><span style="display:flex;gap:16px"><a class="li" href="https://www.linkedin.com/in/gerard-manau-andujar" target="_blank" rel="noopener"><svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4.98 3.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5zM3 9.75h4v11H3zm7 0h3.8v1.5h.06c.53-.95 1.83-1.95 3.77-1.95 4.03 0 4.77 2.5 4.77 5.75v5.7h-4v-5.05c0-1.2-.02-2.75-1.7-2.75-1.7 0-1.95 1.3-1.95 2.65v5.15H10z"/></svg>LinkedIn</a><button data-lockbtn>Ver importes</button></span></div>
+  <div class="foot"><span>Actualizado el <span data-updated></span></span><span style="display:flex;gap:16px"><a class="li" href="https://www.linkedin.com/in/gerard-manau-andujar" target="_blank" rel="noopener"><svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4.98 3.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5zM3 9.75h4v11H3zm7 0h3.8v1.5h.06c.53-.95 1.83-1.95 3.77-1.95 4.03 0 4.77 2.5 4.77 5.75v5.7h-4v-5.05c0-1.2-.02-2.75-1.7-2.75-1.7 0-1.95 1.3-1.95 2.65v5.15H10z"/></svg>LinkedIn</a><button class="li share" data-share type="button"><svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" d="M12 3v12M7 8l5-5 5 5M5 13v7h14v-7"/></svg><span>Compartir</span></button><button data-lockbtn>Ver importes</button></span></div>
 </div>
 
 <p class="load-err" id="loadErr" hidden>No se han podido cargar los datos de la cartera. Recarga la página en unos minutos.</p>
@@ -441,7 +446,7 @@ body.loading main section:not(.hero),body.failed main section:not(.hero){visibil
 
 <footer>
   <div class="wrap">
-    <span style="display:flex;gap:16px;align-items:baseline;flex-wrap:wrap"><span>Vela Capital Management. Actualizado el <span data-updated></span>.</span><a class="li" href="https://www.linkedin.com/in/gerard-manau-andujar" target="_blank" rel="noopener"><svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4.98 3.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5zM3 9.75h4v11H3zm7 0h3.8v1.5h.06c.53-.95 1.83-1.95 3.77-1.95 4.03 0 4.77 2.5 4.77 5.75v5.7h-4v-5.05c0-1.2-.02-2.75-1.7-2.75-1.7 0-1.95 1.3-1.95 2.65v5.15H10z"/></svg>LinkedIn</a></span>
+    <span style="display:flex;gap:16px;align-items:baseline;flex-wrap:wrap"><span>Vela Capital Management. Actualizado el <span data-updated></span>.</span><a class="li" href="https://www.linkedin.com/in/gerard-manau-andujar" target="_blank" rel="noopener"><svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4.98 3.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5zM3 9.75h4v11H3zm7 0h3.8v1.5h.06c.53-.95 1.83-1.95 3.77-1.95 4.03 0 4.77 2.5 4.77 5.75v5.7h-4v-5.05c0-1.2-.02-2.75-1.7-2.75-1.7 0-1.95 1.3-1.95 2.65v5.15H10z"/></svg>LinkedIn</a><button class="li share" data-share type="button"><svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" d="M12 3v12M7 8l5-5 5 5M5 13v7h14v-7"/></svg><span>Compartir</span></button></span>
     <p>Cartera personal con fines informativos. Nada de lo publicado aquí es una recomendación de inversión. Rentabilidades pasadas no garantizan rentabilidades futuras.</p>
   </div>
 </footer>
@@ -468,6 +473,7 @@ body.loading main section:not(.hero),body.failed main section:not(.hero){visibil
 </div>
 
 <script>window.VELA_API = "https://script.google.com/macros/s/AKfycbxrb1sMOMEzOZFFB7YRKoFx7_sXQNclwhNSeVmtrkcwODzR_KAxquxxIwFJtw6z7-1Upw/exec";</script>
-<script src="app.js?v=5d658ad0" defer></script>
+<script src="app.js?v=786cf476" defer></script>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 </body>
 </html>
