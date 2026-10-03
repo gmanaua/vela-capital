@@ -14,7 +14,11 @@ const MONTHS_LONG = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'jul
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /* ---------- formato ---------- */
-const nf = (d) => new Intl.NumberFormat('es-ES', { minimumFractionDigits: d, maximumFractionDigits: d });
+const nf = (d) => {
+  const f = new Intl.NumberFormat('es-ES', { minimumFractionDigits: d, maximumFractionDigits: d, useGrouping: 'always' });
+  // Navegadores antiguos no agrupan 4 cifras en español: se añade el punto a mano
+  return { format: (x) => f.format(x).replace(/^(-?\d)(\d{3})(?=,|$)/, '$1.$2') };
+};
 const num2 = (x) => (x < 0 ? '−' : '') + nf(2).format(Math.abs(x));
 const sign = (x) => (x > 0 ? '+' : x < 0 ? '−' : '');
 const pct = (x, d = 1) => sign(x) + nf(d).format(Math.abs(x * 100)) + ' %';
@@ -410,9 +414,6 @@ const money = (x, f = eur) => (S.priv ? f(x) : '0.000 €');
 let S, unlocked = false, perfMode = 'pct', sortKey = 'peso', sortDir = -1;
 
 function renderHero() {
-  const n = document.getElementById('heroNum');
-  countUp(n, S.twr, (v) => pct(v, 1));
-  document.getElementById('heroSince').textContent = `${MONTHS_LONG[S.since.getMonth()]} de ${S.since.getFullYear()}`;
   document.querySelectorAll('[data-updated]').forEach((e) => (e.textContent = fmtDate(S.updated)));
 }
 
@@ -635,6 +636,17 @@ function syncSeg() {
   const por = document.getElementById('portrait');
   if (reduceMotion) por.classList.add('in');
   else { const pio = new IntersectionObserver((es) => { if (es[0].isIntersecting) { por.classList.add('in'); pio.disconnect(); } }, { threshold: 0.3 }); pio.observe(por); }
+  // Parallax suave de las imágenes de fondo
+  const bands = [...document.querySelectorAll('.band-img')];
+  if (!reduceMotion && bands.length) {
+    const par = () => bands.forEach((img) => {
+      const r = img.parentElement.getBoundingClientRect();
+      if (r.bottom < 0 || r.top > innerHeight) return;
+      const k = (r.top + r.height / 2 - innerHeight / 2) / innerHeight;
+      img.style.transform = `translate3d(0, ${(k * -12).toFixed(2)}%, 0)`;
+    });
+    addEventListener('scroll', par, { passive: true }); par();
+  }
   const top = document.querySelector('.top');
   const onScroll = () => top.classList.toggle('solid', window.scrollY > window.innerHeight * 0.6);
   window.addEventListener('scroll', onScroll, { passive: true }); onScroll();

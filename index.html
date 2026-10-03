@@ -74,7 +74,7 @@ section.sec{padding:var(--sec) 0}
 .sec-h{display:grid;grid-template-columns:1fr auto;align-items:end;gap:24px;border-bottom:1px solid var(--ink);padding-bottom:12px;margin-bottom:24px}
 .sec-h h2{font-weight:400;font-size:clamp(32px,5vw,48px);line-height:1.1;letter-spacing:-.04em}
 .sec-h p{font-size:14px;color:var(--muted);max-width:44ch;text-align:right}
-.band-polar{background:var(--polar)}
+.band-polar{background:linear-gradient(rgba(191,224,247,.86),rgba(191,224,247,.9)),url(assets/towers.webp) center 30%/cover no-repeat}
 .band-polar .sec-h{border-color:var(--carbon)}
 
 /* gráficos */
@@ -222,7 +222,7 @@ footer p{max-width:60ch;color:var(--muted)}
 
 .mark{display:flex;align-items:center;gap:10px}
 .mark img{display:block;height:25px;width:auto}
-.hero-logo{display:block;width:96px;height:auto;margin:0 auto 28px}
+.hero-logo{display:block;width:clamp(150px,19vw,230px);height:auto;margin:0 auto 32px}
 .hero-stat{margin-top:32px;font-size:16px}
 .hero-stat a{display:inline-flex;align-items:baseline;gap:8px;border-bottom:1px solid var(--ink);padding-bottom:3px}
 .hero-stat a:hover{text-decoration:none;color:var(--carbon)}
@@ -273,6 +273,11 @@ button.li{background:none;border:0;border-bottom:1px solid var(--ink);cursor:poi
 .toast{position:fixed;z-index:90;left:50%;bottom:24px;transform:translate(-50%,12px);background:var(--ink);color:var(--white);padding:10px 14px;font-size:14px;opacity:0;transition:opacity .25s,transform .25s;pointer-events:none}
 .toast.show{opacity:1;transform:translate(-50%,0)}
 @media (max-width:600px){.share-top{display:none}}
+.band{position:relative;height:clamp(240px,46vh,520px);overflow:hidden;margin:0}
+.band-img{position:absolute;left:0;top:-15%;width:100%;height:130%;object-fit:cover;will-change:transform}
+.band::before,.band::after{content:"";position:absolute;left:0;right:0;height:90px;z-index:1;pointer-events:none}
+.band::before{top:0;background:linear-gradient(#fff,rgba(255,255,255,0))}
+.band::after{bottom:0;background:linear-gradient(rgba(255,255,255,0),#fff)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
 </style>
 </head>
@@ -310,7 +315,6 @@ button.li{background:none;border:0;border-bottom:1px solid var(--ink);cursor:poi
       <img class="hero-logo" src="assets/logo.png" alt="Logotipo de Vela Capital Management" width="120" height="80">
       <h1>Rumbo al largo plazo.</h1>
       <p>Una cartera personal construida semana a semana.</p>
-      <p class="hero-stat"><a href="#rendimiento"><span class="n" id="heroNum">+0,0 %</span> desde <span id="heroSince"></span></a></p>
     </div>
     <canvas id="sphere" aria-hidden="true"></canvas>
   </section>
@@ -334,6 +338,8 @@ button.li{background:none;border:0;border-bottom:1px solid var(--ink);cursor:poi
       </div>
     </div>
   </section>
+
+  <div class="band" aria-hidden="true"><img class="band-img" src="assets/city.webp" alt="" loading="lazy"></div>
 
   <section class="sec" id="rendimiento" style="padding-top:0">
     <div class="wrap">
@@ -473,7 +479,7 @@ button.li{background:none;border:0;border-bottom:1px solid var(--ink);cursor:poi
 </div>
 
 <script>window.VELA_API = "https://script.google.com/macros/s/AKfycbxrb1sMOMEzOZFFB7YRKoFx7_sXQNclwhNSeVmtrkcwODzR_KAxquxxIwFJtw6z7-1Upw/exec";</script>
-<script src="app.js?v=786cf476" defer></script>
+<script src="app.js?v=27a0232c" defer></script>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 </body>
 </html>
