@@ -1,0 +1,400 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vela Capital Management</title>
+<meta name="description" content="Cartera personal de fondos, ETFs y acciones: rentabilidad, asignación y posiciones.">
+<link rel="icon" href="assets/logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --white:#ffffff; --ink:#3a3a3e; --carbon:#090b11; --ash:#b5b0b0;
+  --apricot:#ffcf9e; --iris:#babfff; --fuchsia:#e3a2ef; --polar:#bfe0f7;
+  --muted:#6e6c70; --hair:rgba(58,58,62,.18);
+  --font:'Instrument Sans', Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --max:1200px; --gut:clamp(16px,4vw,40px); --sec:90px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--white);color:var(--ink);font-family:var(--font);font-size:16px;line-height:1.5;letter-spacing:-.16px;-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums}
+a{color:inherit;text-decoration:none}
+a:hover{text-decoration:underline;text-underline-offset:3px}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+:focus-visible{outline:2px solid var(--carbon);outline-offset:3px}
+strong{font-weight:500}
+small{font-size:12px;letter-spacing:-.36px;color:var(--muted);display:block}
+.wrap{max-width:var(--max);margin:0 auto;padding:0 var(--gut)}
+
+/* cabecera */
+.top{position:fixed;inset:0 0 auto 0;z-index:40;display:flex;justify-content:space-between;align-items:center;padding:14px var(--gut);pointer-events:none}
+.top>*{pointer-events:auto}
+.top{transition:background .3s,border-color .3s;border-bottom:1px solid transparent}
+.top.solid{background:rgba(255,255,255,.92);backdrop-filter:blur(8px);border-bottom-color:var(--hair)}
+.mark{font-weight:500;font-size:14px;letter-spacing:-.42px;line-height:1;color:var(--ink)}
+.top-r{display:flex;gap:6px;align-items:center}
+.ghost{height:40px;padding:0 14px;border:1px solid var(--ink);background:var(--white);font-size:14px;letter-spacing:-.3px;white-space:nowrap}
+.ghost:hover{background:var(--ink);color:var(--white)}
+.burger{width:40px;height:40px;border:1px solid var(--ink);background:var(--white);display:grid;place-items:center}
+.burger i{display:block;width:16px;height:1px;background:var(--ink);box-shadow:0 -5px 0 var(--ink),0 5px 0 var(--ink);transition:.25s}
+.burger[aria-expanded=true] i{box-shadow:none;transform:rotate(45deg)}
+.burger[aria-expanded=true] i::after{content:"";display:block;width:16px;height:1px;background:var(--ink);transform:rotate(90deg)}
+
+.menu{position:fixed;inset:0;z-index:35;background:var(--white);display:flex;flex-direction:column;justify-content:center;padding:90px var(--gut) 40px;opacity:0;visibility:hidden;transition:opacity .3s,visibility .3s}
+.menu.open{opacity:1;visibility:visible}
+.menu nav{max-width:var(--max);width:100%;margin:0 auto;display:grid;gap:4px}
+.menu a{font-size:clamp(32px,6vw,54px);letter-spacing:-1.62px;line-height:1.15;width:max-content}
+.menu .foot{max-width:var(--max);width:100%;margin:40px auto 0;border-top:1px solid var(--ink);padding-top:12px;display:flex;justify-content:space-between;gap:12px;font-size:12px}
+
+/* hero */
+.hero{position:relative;min-height:max(680px,100svh);overflow:hidden;background:radial-gradient(120% 75% at 50% 100%,#ffcf9e 0%,#ffe4c6 32%,#fff6ec 56%,#fff 78%)}
+.hero-copy{position:relative;z-index:2;text-align:center;padding:clamp(96px,13vh,140px) var(--gut) 0;max-width:980px;margin:0 auto}
+.hero h1{text-wrap:balance;font-weight:400;font-size:clamp(40px,7.2vw,54px);line-height:1;letter-spacing:-.03em;color:var(--ink)}
+.hero h1 .num{display:inline-block;min-width:5.2ch;text-align:right}
+.hero p{font-size:clamp(18px,2.2vw,24px);line-height:1.4;letter-spacing:-.24px;margin:24px auto 0;max-width:36ch;text-wrap:balance}
+#sphere{position:absolute;left:0;right:0;bottom:0;width:100%;height:68%;z-index:1}
+
+/* secciones */
+section.sec{padding:var(--sec) 0}
+.sec-h{display:grid;grid-template-columns:1fr auto;align-items:end;gap:24px;border-bottom:1px solid var(--ink);padding-bottom:12px;margin-bottom:24px}
+.sec-h h2{font-weight:400;font-size:clamp(32px,5vw,48px);line-height:1.1;letter-spacing:-.04em}
+.sec-h p{font-size:14px;color:var(--muted);max-width:44ch;text-align:right}
+.band-polar{background:var(--polar)}
+.band-polar .sec-h{border-color:var(--carbon)}
+
+/* gráficos */
+.chart{position:relative;width:100%}
+.chart svg{display:block;overflow:visible}
+.grid line{stroke:var(--hair);stroke-width:1}
+.grid line.zero,.baseline{stroke:var(--ink);stroke-width:1}
+.grid text,.bar .lab{fill:var(--muted);font-size:12px;letter-spacing:-.2px}
+.line{fill:none;stroke:var(--ink);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.enddot{fill:var(--ink);stroke:var(--white);stroke-width:2}
+.hovdot{fill:var(--white);stroke:var(--ink);stroke-width:2;pointer-events:none}
+.cross{stroke:var(--ink);stroke-width:1;stroke-dasharray:2 3;pointer-events:none}
+.bar rect:first-child{fill:var(--ink)}
+.bar.partial rect:first-child{fill:var(--white);stroke:var(--ink);stroke-width:1;stroke-dasharray:3 2}
+.bar .val{fill:var(--ink);letter-spacing:-.2px}
+.bar:hover rect:first-child{fill:var(--carbon)}
+
+.tip{position:fixed;left:0;top:0;z-index:60;pointer-events:none;opacity:0;transition:opacity .12s;background:var(--white);border:1px solid var(--ink);padding:8px 10px;font-size:13px;line-height:1.45;min-width:150px}
+.tip b{font-weight:500;display:block;margin-bottom:2px}
+.tip .row{display:flex;justify-content:space-between;gap:16px}
+
+.perf-top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.seg{display:inline-flex;border:1px solid var(--ink)}
+.seg button{height:36px;padding:0 14px;font-size:14px}
+.seg button[aria-pressed=true]{background:var(--ink);color:var(--white)}
+.seg button:disabled{color:var(--ash);cursor:not-allowed}
+.note{font-size:12px;color:var(--muted);letter-spacing:-.36px;max-width:60ch}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-top:24px}
+.stats>div,.kpi{border:1px solid var(--hair);padding:12px;min-height:96px;display:flex;flex-direction:column;gap:4px}
+dt{font-size:12px;letter-spacing:-.36px;color:var(--muted)}
+dd{font-size:24px;letter-spacing:-.6px;line-height:1.2}
+.month-wrap{margin-top:60px}
+.month-wrap h3,.sub-h{font-weight:400;font-size:24px;letter-spacing:-.5px;margin-bottom:8px}
+
+.delta{white-space:nowrap}
+.delta .arr{font-size:.62em;margin-right:.35em;position:relative;top:-.12em}
+.delta.down .arr{top:-.05em}
+
+/* asignación */
+.alloc{display:grid;grid-template-columns:1.4fr 1fr;gap:60px;align-items:start}
+.stack{display:flex;height:72px;gap:2px}
+.stack span{display:block;transition:flex .8s cubic-bezier(.65,0,.35,1);outline:1px solid rgba(58,58,62,.25);outline-offset:-1px}
+.alist{list-style:none;margin-top:24px}
+.alist li{display:grid;grid-template-columns:14px 1fr auto auto auto;gap:16px;align-items:center;padding:12px 0;border-top:1px solid var(--hair)}
+.sw{width:14px;height:14px;display:inline-block;outline:1px solid rgba(58,58,62,.35);outline-offset:-1px;flex:none}
+.alist .w{font-size:24px;letter-spacing:-.6px;min-width:4.5ch;text-align:right}
+.alist .r,.alist .v{min-width:8ch;text-align:right}
+.liq{border:1px solid var(--apricot);padding:12px}
+.liq .stack{height:12px;margin:14px 0 10px}
+.liq .stack span:first-child{background:var(--ink)}
+.liq .stack span:last-child{background:var(--apricot)}
+.liq-t{display:flex;justify-content:space-between;font-size:14px}
+.k{display:inline-block;width:10px;height:10px;margin-right:6px}
+.k.inv{background:var(--ink)} .k.cash{background:var(--apricot);outline:1px solid rgba(58,58,62,.35);outline-offset:-1px}
+.liq p{font-size:24px;letter-spacing:-.5px;line-height:1.3}
+
+/* tabla */
+.tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{width:100%;border-collapse:collapse;min-width:620px}
+th{font-weight:400;font-size:12px;letter-spacing:-.36px;color:var(--muted);text-align:left;padding:8px 10px;border-bottom:1px solid var(--ink);white-space:nowrap;user-select:none}
+th[data-k]{cursor:pointer}
+th[data-k]:hover{color:var(--ink)}
+th[aria-sort=ascending]::after{content:" ↑";color:var(--ink)}
+th[aria-sort=descending]::after{content:" ↓";color:var(--ink)}
+td{padding:12px 10px;border-bottom:1px solid var(--hair);vertical-align:middle}
+.num,th.num{text-align:right;white-space:nowrap}
+.pn{display:flex;gap:12px;align-items:flex-start}
+.pn .sw{margin-top:5px}
+tbody tr:hover{background:#fbf8f5}
+.wbar{display:inline-block;width:56px;height:4px;background:rgba(58,58,62,.1);margin-right:10px;vertical-align:middle}
+.wbar i{display:block;height:100%;background:var(--ink)}
+
+/* importes privados */
+.priv{transition:filter .4s,opacity .4s}
+body:not(.unlocked) .priv{filter:blur(7px);opacity:.55;user-select:none}
+body:not(.unlocked) .priv-only{display:none}
+body.unlocked .lock-msg{display:none}
+
+/* KPIs */
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
+.kpi dd{font-size:clamp(28px,4vw,48px);letter-spacing:-.04em;line-height:1.1;margin:8px 0 4px}
+.kpi.fill{background:var(--apricot);border-color:var(--apricot)}
+.kpi.fill small{color:var(--ink)}
+
+/* radar */
+.ideas{list-style:none;display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
+.ideas li{border:1px solid var(--iris);padding:12px;display:flex;flex-direction:column;gap:6px;min-height:120px}
+.ideas li strong{font-weight:400;font-size:16px;line-height:1.3}
+.ideas li span{font-size:12px;color:var(--muted)}
+.ideas li em{font-style:normal;font-size:12px;margin-top:auto;border-top:1px solid var(--hair);padding-top:6px}
+
+/* privada */
+.lock-msg{border:1px solid var(--carbon);background:var(--white);padding:24px;display:flex;justify-content:space-between;align-items:center;gap:24px;flex-wrap:wrap}
+.lock-msg p{font-size:24px;letter-spacing:-.5px;line-height:1.3;max-width:28ch}
+.band-polar .kpi{background:var(--white);border-color:transparent}
+.band-polar .kpi.fill{background:var(--fuchsia)}
+.priv-grid{display:grid;grid-template-columns:1fr;gap:60px}
+.brokers{list-style:none}
+.brokers li{display:grid;grid-template-columns:140px 1fr 110px 64px;gap:16px;align-items:center;padding:12px 0;border-top:1px solid rgba(9,11,17,.2)}
+.brokers .wbar{width:100%;background:rgba(9,11,17,.1)}
+.brokers .wbar i{background:var(--carbon)}
+.muted{color:var(--muted)}
+.priv-chart{background:var(--white);padding:12px 12px 4px}
+
+/* diálogo */
+.lock{position:fixed;inset:0;z-index:70;background:rgba(255,255,255,.86);backdrop-filter:blur(6px);display:grid;place-items:center;padding:16px;opacity:0;visibility:hidden;transition:.25s}
+.lock.open{opacity:1;visibility:visible}
+.lock form{background:var(--white);border:1px solid var(--ink);padding:24px;width:min(420px,100%);display:grid;gap:12px;position:relative}
+.lock h2{font-weight:400;font-size:24px;letter-spacing:-.5px}
+.lock input{height:44px;border:1px solid var(--ink);padding:0 12px;font:inherit;border-radius:0}
+.lock .err{font-size:12px;min-height:18px}
+.lock .close{position:absolute;right:8px;top:8px;width:32px;height:32px}
+.lock .solid{height:44px;background:var(--ink);color:var(--white)}
+
+footer{border-top:1px solid var(--ink);margin-top:var(--sec)}
+footer .wrap{display:flex;justify-content:space-between;gap:24px;padding-top:12px;padding-bottom:40px;font-size:12px;letter-spacing:-.36px;flex-wrap:wrap}
+footer p{max-width:60ch;color:var(--muted)}
+
+@media (max-width:900px){
+  .alloc{grid-template-columns:1fr;gap:40px}
+  .kpis{grid-template-columns:repeat(2,1fr)}
+  .ideas{grid-template-columns:repeat(2,1fr)}
+  .stats{grid-template-columns:repeat(2,1fr)}
+}
+@media (max-width:600px){
+  :root{--sec:60px}
+  .sec-h{grid-template-columns:1fr}
+  .sec-h p{text-align:left}
+  .top .ghost{display:none}
+  .alist li{grid-template-columns:14px 1fr auto auto;gap:10px}
+  .alist .v{display:none}
+  .brokers li{grid-template-columns:1fr 90px 52px}
+  .brokers .wbar{display:none}
+  .hide-s{display:none}
+  table{min-width:0}
+  .wbar{width:28px;margin-right:6px}
+  .kpi dd{font-size:28px}
+}
+
+.mark{display:flex;align-items:center;gap:10px}
+.mark img{display:block;height:25px;width:auto}
+.hero-logo{display:block;width:96px;height:auto;margin:0 auto 28px}
+.hero-stat{margin-top:32px;font-size:16px}
+.hero-stat a{display:inline-flex;align-items:baseline;gap:8px;border-bottom:1px solid var(--ink);padding-bottom:3px}
+.hero-stat a:hover{text-decoration:none;color:var(--carbon)}
+.hero-stat .n{font-size:24px;letter-spacing:-.6px;font-weight:500}
+.helm{display:grid;grid-template-columns:5fr 7fr;gap:60px;align-items:start}
+.portrait{margin:0}
+.portrait .frame{position:relative;aspect-ratio:4/5;overflow:hidden;background:var(--white);border-bottom:1px solid var(--ink)}
+.portrait .frame img{position:absolute;left:0;right:0;bottom:0;width:100%;height:auto;display:block;clip-path:inset(0 0 0 0);transition:clip-path 1.8s cubic-bezier(.65,0,.35,1)}
+.js .portrait:not(.in) .frame img{clip-path:inset(0 0 100% 0)}
+.portrait figcaption{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding-top:10px}
+.portrait figcaption strong{font-size:16px;display:block}
+.portrait figcaption small{margin-top:2px}
+.li{display:inline-flex;align-items:center;gap:6px;font-size:14px;border-bottom:1px solid var(--ink);padding-bottom:2px;white-space:nowrap}
+.li:hover{text-decoration:none;color:var(--carbon)}
+.helm blockquote{font-size:clamp(36px,5.4vw,54px);line-height:1.05;letter-spacing:-.03em;color:var(--ink);margin-bottom:40px;text-wrap:balance}
+.principles>div{border-top:1px solid var(--ink);padding:12px 0 24px}
+.principles h3{font-weight:500;font-size:16px;margin-bottom:4px}
+.principles p{font-size:16px;color:var(--ink);max-width:52ch}
+@media (max-width:900px){.helm{grid-template-columns:1fr;gap:40px}.portrait{max-width:420px}}
+@media (max-width:600px){
+  .hero{min-height:max(600px,92svh)}
+  #sphere{height:58%}
+}
+.load-err{position:fixed;z-index:80;left:50%;bottom:24px;transform:translateX(-50%);background:var(--white);border:1px solid var(--ink);padding:12px 16px;font-size:14px;max-width:calc(100% - 32px)}
+body.loading main section:not(.hero),body.failed main section:not(.hero){visibility:hidden}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<script>document.documentElement.classList.add("js");document.body.classList.add("loading")</script>
+
+<header class="top">
+  <a class="mark" href="#inicio"><img src="assets/logo.png" alt="" width="38" height="25">Vela Capital Management</a>
+  <div class="top-r">
+    <button class="ghost" data-lockbtn>Ver importes</button>
+    <button class="burger" id="menuBtn" aria-label="Menú" aria-expanded="false" aria-controls="menu"><i></i></button>
+  </div>
+</header>
+
+<div class="menu" id="menu">
+  <nav aria-label="Secciones">
+    <a href="#timon">Al timón</a>
+    <a href="#rendimiento">Rendimiento</a>
+    <a href="#asignacion">Asignación</a>
+    <a href="#posiciones">Posiciones</a>
+    <a href="#indicadores">Indicadores</a>
+    <a href="#radar">En el radar</a>
+    <a href="#privado">Patrimonio</a>
+  </nav>
+  <div class="foot"><span>Actualizado el <span data-updated></span></span><span style="display:flex;gap:16px"><a class="li" href="https://www.linkedin.com/in/gerard-manau-andujar" target="_blank" rel="noopener"><svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4.98 3.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5zM3 9.75h4v11H3zm7 0h3.8v1.5h.06c.53-.95 1.83-1.95 3.77-1.95 4.03 0 4.77 2.5 4.77 5.75v5.7h-4v-5.05c0-1.2-.02-2.75-1.7-2.75-1.7 0-1.95 1.3-1.95 2.65v5.15H10z"/></svg>LinkedIn</a><button data-lockbtn>Ver importes</button></span></div>
+</div>
+
+<p class="load-err" id="loadErr" hidden>No se han podido cargar los datos de la cartera. Recarga la página en unos minutos.</p>
+<main>
+  <section class="hero" id="inicio">
+    <div class="hero-copy">
+      <img class="hero-logo" src="assets/logo.png" alt="Logotipo de Vela Capital Management" width="120" height="80">
+      <h1>Rumbo al largo plazo.</h1>
+      <p>Una cartera personal construida semana a semana.</p>
+      <p class="hero-stat"><a href="#rendimiento"><span class="n" id="heroNum">+0,0 %</span> desde <span id="heroSince"></span></a></p>
+    </div>
+    <canvas id="sphere" aria-hidden="true"></canvas>
+  </section>
+
+  <section class="sec" id="timon">
+    <div class="wrap">
+      <div class="sec-h"><h2>Al timón</h2><p>Quién gestiona la cartera y con qué criterio.</p></div>
+      <div class="helm">
+        <figure class="portrait" id="portrait">
+          <div class="frame"><img src="assets/gerard.webp" alt="Retrato de Gerard Manau" width="720" height="900"></div>
+          <figcaption><span><strong>Gerard Manau</strong><small>Gestor de Vela Capital Management</small></span><a class="li" href="https://www.linkedin.com/in/gerard-manau-andujar" target="_blank" rel="noopener"><svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4.98 3.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5zM3 9.75h4v11H3zm7 0h3.8v1.5h.06c.53-.95 1.83-1.95 3.77-1.95 4.03 0 4.77 2.5 4.77 5.75v5.7h-4v-5.05c0-1.2-.02-2.75-1.7-2.75-1.7 0-1.95 1.3-1.95 2.65v5.15H10z"/></svg>LinkedIn</a></figcaption>
+        </figure>
+        <div>
+          <blockquote>“El viento cambia. El rumbo, no.”</blockquote>
+          <div class="principles">
+            <div><h3>Criterio propio</h3><p>Análisis fundamental, técnico y macroeconómico para decidir con convicción, no con prisa.</p></div>
+            <div><h3>El riesgo se gestiona</h3><p>Correlaciones vigiladas y exposición ajustada a cada momento del mercado. Cuando el viento cambia, se ajusta la vela.</p></div>
+            <div><h3>Revisión constante</h3><p>Cada viernes se registra el valor de la cartera, y cada posición se revisa y rebalancea cuando hace falta.</p></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec" id="rendimiento" style="padding-top:0">
+    <div class="wrap">
+      <div class="sec-h"><h2>Rendimiento</h2><p>Valor de la cartera registrado cada viernes. Pasa el cursor por el gráfico para ver cada semana.</p></div>
+      <div class="perf-top">
+        <div class="seg" role="group" aria-label="Medida">
+          <button data-mode="pct">Rentabilidad</button>
+          <button data-mode="eur" title="Requiere acceso privado">Patrimonio en €</button>
+        </div>
+        <span class="note" id="perfNote"></span>
+      </div>
+      <div class="chart" id="perfChart"></div>
+      <dl class="stats" id="perfStats"></dl>
+      <div class="month-wrap">
+        <h3>Rentabilidad mensual</h3>
+        <p class="note">* Mes en curso.</p>
+        <div class="chart" id="monthChart"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec" id="asignacion" style="padding-top:0">
+    <div class="wrap">
+      <div class="sec-h"><h2>Asignación</h2><p>Cuatro bloques con un papel distinto cada uno, en peso sobre lo invertido.</p></div>
+      <div class="alloc">
+        <div>
+          <div class="stack" id="allocBar" role="img" aria-label="Peso por bloque"></div>
+          <ul class="alist" id="allocList"></ul>
+        </div>
+        <div class="liq">
+          <p>Del patrimonio total, qué parte está invertida y qué parte espera en liquidez.</p>
+          <div class="stack" id="liqBar"></div>
+          <div class="liq-t" id="liqText"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec" id="posiciones" style="padding-top:0">
+    <div class="wrap">
+      <div class="sec-h"><h2>Posiciones</h2><p>Pulsa una columna para ordenar. Los importes se ven con acceso privado.</p></div>
+      <div class="tbl-wrap">
+        <table id="posTable">
+          <thead><tr>
+            <th data-k="nombre" tabindex="0">Posición</th>
+            <th data-k="bloque" tabindex="0" class="hide-s">Bloque</th>
+            <th data-k="peso" tabindex="0" class="num">Peso</th>
+            <th data-k="rent" tabindex="0" class="num">Rentabilidad</th>
+            <th data-k="valor" tabindex="0" class="num">Valor</th>
+            <th data-k="pl" tabindex="0" class="num hide-s">Resultado</th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec" id="indicadores" style="padding-top:0">
+    <div class="wrap">
+      <div class="sec-h"><h2>Indicadores</h2><p>Concentración, exposición y extremos de la cartera.</p></div>
+      <dl class="kpis" id="kpis"></dl>
+    </div>
+  </section>
+
+  <section class="sec" id="radar" style="padding-top:0">
+    <div class="wrap">
+      <div class="sec-h"><h2>En el radar</h2><p>Ideas en estudio. No son posiciones abiertas.</p></div>
+      <ul class="ideas" id="ideas"></ul>
+    </div>
+  </section>
+
+  <section class="sec band-polar" id="privado">
+    <div class="wrap">
+      <div class="sec-h"><h2>Patrimonio</h2><p>Importes en euros, visibles solo con contraseña.</p></div>
+      <div class="lock-msg">
+        <p>Esta sección muestra cifras en euros y está protegida.</p>
+        <button class="ghost" data-lockbtn>Ver importes</button>
+      </div>
+      <div class="priv-only priv-grid">
+        <dl class="kpis" id="privKpis"></dl>
+        <div>
+          <h3 class="sub-h">Por broker</h3>
+          <ul class="brokers" id="brokers"></ul>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span style="display:flex;gap:16px;align-items:baseline;flex-wrap:wrap"><span>Vela Capital Management. Actualizado el <span data-updated></span>.</span><a class="li" href="https://www.linkedin.com/in/gerard-manau-andujar" target="_blank" rel="noopener"><svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4.98 3.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5zM3 9.75h4v11H3zm7 0h3.8v1.5h.06c.53-.95 1.83-1.95 3.77-1.95 4.03 0 4.77 2.5 4.77 5.75v5.7h-4v-5.05c0-1.2-.02-2.75-1.7-2.75-1.7 0-1.95 1.3-1.95 2.65v5.15H10z"/></svg>LinkedIn</a></span>
+    <p>Cartera personal con fines informativos. Nada de lo publicado aquí es una recomendación de inversión. Rentabilidades pasadas no garantizan rentabilidades futuras.</p>
+  </div>
+</footer>
+
+<div class="lock" id="lock" role="dialog" aria-modal="true" aria-labelledby="lockT">
+  <form id="lockForm">
+    <button type="button" class="close" aria-label="Cerrar">✕</button>
+    <h2 id="lockT">Acceso privado</h2>
+    <small>Introduce la contraseña para ver los importes en euros.</small>
+    <input id="pw" type="password" autocomplete="current-password" aria-label="Contraseña">
+    <span class="err" id="pwErr" role="alert"></span>
+    <button class="solid" type="submit">Ver importes</button>
+  </form>
+</div>
+
+<script>window.VELA_API = "https://script.google.com/macros/s/AKfycbxrb1sMOMEzOZFFB7YRKoFx7_sXQNclwhNSeVmtrkcwODzR_KAxquxxIwFJtw6z7-1Upw/exec";</script>
+<script src="app.js" defer></script>
+</body>
+</html>
