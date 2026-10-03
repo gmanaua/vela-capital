@@ -22,6 +22,7 @@ const eurSigned = (x, d = 0) => sign(x) + nf(d).format(Math.abs(x)) + ' €';
 const arrow = (x) => (x > 0 ? '▲' : x < 0 ? '▼' : '■');
 const delta = (x, d = 1) =>
   `<span class="delta ${x > 0 ? 'up' : x < 0 ? 'down' : ''}"><span class="arr" aria-hidden="true">${arrow(x)}</span>${pct(x, d)}</span>`;
+const diffPP = (x) => `<span class="delta ${x > 0 ? 'up' : x < 0 ? 'down' : ''}"><span class="arr" aria-hidden="true">${arrow(x)}</span>${sign(x)}${nf(1).format(Math.abs(x * 100))} p.p.</span>`;
 const parseDate = (s) => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
 const fmtDate = (dt) => `${dt.getDate()} ${MONTHS[dt.getMonth()]} ${dt.getFullYear()}`;
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -99,6 +100,7 @@ function derive(d) {
 
   const out = {
     raw: d, priv, c, months, pos, blocks,
+    bench: d.bench && Array.isArray(d.bench.acum) && d.bench.acum.length === c.length ? d.bench : null,
     twr: c[c.length - 1].acum,
     since: c[0].date,
     updated: parseDate(d.actualizado),
@@ -159,9 +161,10 @@ const hideTip = () => (tip.style.opacity = 0);
 function lineChart(host, pts, opt) {
   host.innerHTML = '';
   const W = host.clientWidth, H = opt.height || 360;
-  const m = { t: 16, r: 12, b: 32, l: opt.left || 56 };
+  const m = { t: 16, r: opt.right || 12, b: 32, l: opt.left || 56 };
   const svg = svgEl('svg', { width: W, height: H, viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': opt.label });
-  const xs = pts.map((p) => p.x.getTime()), ys = pts.map((p) => p.y);
+  const ref = (opt.ref || []).filter((p) => p.y != null);
+  const xs = pts.map((p) => p.x.getTime()), ys = pts.map((p) => p.y).concat(ref.map((p) => p.y));
   const x0 = Math.min(...xs), x1 = Math.max(...xs);
   const ticks = niceTicks(Math.min(...ys, opt.zero ? 0 : Infinity), Math.max(...ys), 4);
   const y0 = ticks[0], y1 = ticks[ticks.length - 1];
@@ -202,6 +205,18 @@ function lineChart(host, pts, opt) {
   const area = svgEl('path', { d: `${line}L${X(x1)},${opt.zero ? Y(0) : H - m.b}L${X(x0)},${opt.zero ? Y(0) : H - m.b}Z`, fill: `url(#${gid})`, class: 'area' });
   const path = svgEl('path', { d: line, class: 'line' });
   svg.appendChild(area);
+  if (ref.length) {
+    const rl = ref.map((p, k) => `${k ? 'L' : 'M'}${X(p.x.getTime()).toFixed(1)},${Y(p.y).toFixed(1)}`).join('');
+    const rp = svgEl('path', { d: rl, class: 'refline' });
+    svg.appendChild(rp);
+    const rlast = ref[ref.length - 1], last0 = pts[pts.length - 1];
+    // etiquetas directas al final de cada línea, separadas si se solapan
+    let yA = Y(last0.y), yB = Y(rlast.y);
+    if (Math.abs(yA - yB) < 16) { const mid = (yA + yB) / 2, s = yA <= yB ? -1 : 1; yA = mid + s * 8; yB = mid - s * 8; }
+    const la = svgEl('text', { x: W - m.r + 10, y: yA + 4, class: 'endlab' }); la.textContent = opt.mainLabel || '';
+    const lb = svgEl('text', { x: W - m.r + 10, y: yB + 4, class: 'endlab ref' }); lb.textContent = opt.refLabel || '';
+    svg.appendChild(la); svg.appendChild(lb);
+  }
   svg.appendChild(path);
 
   const last = pts[pts.length - 1];
@@ -363,10 +378,21 @@ function renderPerf() {
   const host = document.getElementById('perfChart');
   const lastC = S.c[S.c.length - 1];
   if (perfMode === 'pct') {
-    lineChart(host, S.c.map((p) => ({ x: p.date, y: p.acum, p })), {
-      label: 'Rentabilidad acumulada semanal', zero: true, left: 52,
+    const bench = S.bench;
+    const narrow = host.clientWidth < 560;
+    const lg = document.getElementById('perfLegend'); lg.hidden = !(bench && narrow);
+    if (bench) document.getElementById('refName').textContent = bench.nombre;
+    lineChart(host, S.c.map((p, i) => ({ x: p.date, y: p.acum, p, i })), {
+      label: bench ? 'Rentabilidad acumulada semanal frente al MSCI World' : 'Rentabilidad acumulada semanal', zero: true, left: 52,
+      ref: bench ? S.c.map((p, i) => ({ x: p.date, y: bench.acum[i] })) : null,
+      right: bench && !narrow ? 104 : 12,
+      mainLabel: narrow ? '' : 'Vela', refLabel: narrow ? '' : bench ? bench.nombre : '',
       fmtAxis: (t) => nf(0).format(t * 100) + ' %',
-      tip: (b) => `<b>Semana del ${fmtDate(b.x)}</b><span class="row">Acumulada ${delta(b.y, 2)}</span><span class="row">Semana ${delta(b.p.r, 2)}</span>`,
+      tip: (b) => {
+        let h = `<b>Semana del ${fmtDate(b.x)}</b><span class="row">Vela ${delta(b.y, 2)}</span>`;
+        if (bench && bench.acum[b.i] != null) h += `<span class="row">${bench.nombre} ${delta(bench.acum[b.i], 2)}</span>`;
+        return h + `<span class="row">Semana ${delta(b.p.r, 2)}</span>`;
+      },
     });
     document.getElementById('perfNote').textContent = 'Rentabilidad ponderada por tiempo: las aportaciones y retiradas no cuentan como rendimiento.';
   } else {
@@ -375,6 +401,7 @@ function renderPerf() {
       fmtAxis: (t) => nf(0).format(t / 1000) + ' k€',
       tip: (b) => `<b>${fmtDate(b.x)}</b><span class="row">${eur(b.y)}</span>`,
     });
+    document.getElementById('perfLegend').hidden = true;
     document.getElementById('perfNote').textContent = 'Patrimonio total: inversiones más liquidez, incluidas las aportaciones.';
   }
   const best = [...S.c].slice(1).sort((a, b) => b.r - a.r)[0];
@@ -382,6 +409,7 @@ function renderPerf() {
   const up = S.c.slice(1).filter((p) => p.r > 0).length;
   document.getElementById('perfStats').innerHTML = `
     <div><dt>Acumulada</dt><dd>${delta(lastC.acum, 2)}</dd></div>
+    ${S.bench && S.bench.acum[S.c.length - 1] != null ? `<div><dt>Frente al ${S.bench.nombre}</dt><dd>${diffPP(lastC.acum - S.bench.acum[S.c.length - 1])}<small>${S.bench.nombre} ${pct(S.bench.acum[S.c.length - 1], 2)} en el mismo periodo</small></dd></div>` : ''}
     <div><dt>Mejor semana</dt><dd>${delta(best.r, 2)}<small>${fmtDate(best.date)}</small></dd></div>
     <div><dt>Peor semana</dt><dd>${delta(worst.r, 2)}<small>${fmtDate(worst.date)}</small></dd></div>
     <div><dt>Semanas en positivo</dt><dd>${up} de ${S.c.length - 1}</dd></div>`;

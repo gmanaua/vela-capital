@@ -70,6 +70,12 @@ section.sec{padding:var(--sec) 0}
 .grid line{stroke:var(--hair);stroke-width:1}
 .grid line.zero,.baseline{stroke:var(--ink);stroke-width:1}
 .grid text,.bar .lab{fill:var(--muted);font-size:12px;letter-spacing:-.2px}
+.legend{display:flex;gap:16px;font-size:12px;margin-bottom:6px}
+.legend .lg{display:inline-block;width:18px;height:0;border-top:2px solid var(--ink);vertical-align:middle;margin-right:6px}
+.legend .lg.ref{border-top:1.5px dashed #8e8b90}
+.refline{fill:none;stroke:#8e8b90;stroke-width:1.5;stroke-dasharray:5 4;stroke-linejoin:round}
+.endlab{font-size:12px;fill:var(--ink);letter-spacing:-.2px}
+.endlab.ref{fill:var(--muted)}
 .line{fill:none;stroke:var(--ink);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
 .enddot{fill:var(--ink);stroke:var(--white);stroke-width:2}
 .hovdot{fill:var(--white);stroke:var(--ink);stroke-width:2;pointer-events:none}
@@ -89,7 +95,7 @@ section.sec{padding:var(--sec) 0}
 .seg button[aria-pressed=true]{background:var(--ink);color:var(--white)}
 .seg button:disabled{color:var(--ash);cursor:not-allowed}
 .note{font-size:12px;color:var(--muted);letter-spacing:-.36px;max-width:60ch}
-.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-top:24px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:5px;margin-top:24px}
 .stats>div,.kpi{border:1px solid var(--hair);padding:12px;min-height:96px;display:flex;flex-direction:column;gap:4px}
 dt{font-size:12px;letter-spacing:-.36px;color:var(--muted)}
 dd{font-size:24px;letter-spacing:-.6px;line-height:1.2}
@@ -298,6 +304,7 @@ body.loading main section:not(.hero),body.failed main section:not(.hero){visibil
         </div>
         <span class="note" id="perfNote"></span>
       </div>
+      <div class="legend" id="perfLegend" hidden><span><i class="lg main"></i>Vela</span><span><i class="lg ref"></i><span id="refName">MSCI World</span></span></div>
       <div class="chart" id="perfChart"></div>
       <dl class="stats" id="perfStats"></dl>
       <div class="month-wrap">
