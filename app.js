@@ -8,12 +8,14 @@ const BLOCKS = [
   { id: 'Temáticos', color: 'var(--polar)', perfil: 'Crecimiento temático' },
   { id: 'Acciones', color: 'var(--fuchsia)', perfil: 'Alta convicción individual' },
 ];
+const RF = 0.02; // tipo sin riesgo anual para Sharpe y Sortino (aprox. facilidad de depósito del BCE)
 const MONTHS = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
 const MONTHS_LONG = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /* ---------- formato ---------- */
 const nf = (d) => new Intl.NumberFormat('es-ES', { minimumFractionDigits: d, maximumFractionDigits: d });
+const num2 = (x) => (x < 0 ? '−' : '') + nf(2).format(Math.abs(x));
 const sign = (x) => (x > 0 ? '+' : x < 0 ? '−' : '');
 const pct = (x, d = 1) => sign(x) + nf(d).format(Math.abs(x * 100)) + ' %';
 const pctPlain = (x, d = 1) => nf(d).format(x * 100) + ' %';
@@ -68,6 +70,13 @@ function toApi(d, priv) {
   return out;
 }
 
+// Tesis de inversión: tesis/index.json = { "NFLX": { "archivo": "tesis/nflx.html", "fecha": "2026-09-15" }, ... }
+let TESIS = {};
+async function loadTesis() {
+  try { const r = await fetch('tesis/index.json', { cache: 'no-cache' }); if (r.ok) TESIS = await r.json(); } catch {}
+}
+const tesisDe = (p) => (p.ticker && TESIS[p.ticker]) || TESIS[p.nombre] || null;
+
 function derive(d) {
   const priv = !!d.privado;
   // Rentabilidad ponderada por tiempo (cada semana ya descuenta aportaciones)
@@ -106,6 +115,7 @@ function derive(d) {
     updated: parseDate(d.actualizado),
     cashPct: d.cashPct,
   };
+  out.risk = riskMetrics(c, out.bench);
   const sorted = [...pos].sort((a, b) => b.rent - a.rent);
   out.best = sorted[0]; out.worst = sorted[sorted.length - 1];
   out.biggest = [...pos].sort((a, b) => b.peso - a.peso)[0];
@@ -120,6 +130,38 @@ function derive(d) {
     out.pat = d.patrimonio.map((p) => ({ ...p, date: parseDate(p.fecha) }));
     out.brokers = {};
     pos.forEach((p) => (out.brokers[p.broker] = (out.brokers[p.broker] || 0) + p.valor));
+  }
+  return out;
+}
+
+/* ---------- riesgo ---------- */
+function riskMetrics(c, bench) {
+  const r = c.slice(1).map((p) => p.r);
+  const n = r.length;
+  if (n < 4) return null;
+  const mean = r.reduce((s, x) => s + x, 0) / n;
+  const sd = Math.sqrt(r.reduce((s, x) => s + (x - mean) ** 2, 0) / (n - 1));
+  const vol = sd * Math.sqrt(52);
+  const ann = Math.pow(1 + c[c.length - 1].acum, 52 / n) - 1;
+  const rfw = Math.pow(1 + RF, 1 / 52) - 1;
+  const down = Math.sqrt(r.reduce((s, x) => s + Math.min(0, x - rfw) ** 2, 0) / n) * Math.sqrt(52);
+  // caídas desde máximos (cartera e índice)
+  const dd = (vals) => { let peak = 1; return vals.map((v) => { const lvl = 1 + v; peak = Math.max(peak, lvl); return lvl / peak - 1; }); };
+  const ddV = dd(c.map((p) => p.acum));
+  let maxDD = 0, ddAt = 0;
+  ddV.forEach((v, i) => { if (v < maxDD) { maxDD = v; ddAt = i; } });
+  const out = { n, vol, ann, sharpe: (ann - RF) / vol, sortino: down ? (ann - RF) / down : null, ddV, maxDD, ddDate: c[ddAt].date, ddNow: ddV[ddV.length - 1] };
+  if (bench) {
+    const b = bench.acum;
+    const pairs = [];
+    for (let i = 1; i < b.length; i++) if (b[i] != null && b[i - 1] != null) pairs.push([c[i].r, (1 + b[i]) / (1 + b[i - 1]) - 1]);
+    if (pairs.length >= 4) {
+      const mx = pairs.reduce((s, p) => s + p[0], 0) / pairs.length, my = pairs.reduce((s, p) => s + p[1], 0) / pairs.length;
+      let cov = 0, vx = 0, vy = 0;
+      pairs.forEach(([x, y]) => { cov += (x - mx) * (y - my); vx += (x - mx) ** 2; vy += (y - my) ** 2; });
+      out.beta = cov / vy; out.corr = cov / Math.sqrt(vx * vy);
+    }
+    out.ddB = dd(b.map((v, i) => (v == null ? (i ? null : 0) : v)).map((v) => v ?? 0));
   }
   return out;
 }
@@ -215,7 +257,7 @@ function lineChart(host, pts, opt) {
     if (Math.abs(yA - yB) < 16) { const mid = (yA + yB) / 2, s = yA <= yB ? -1 : 1; yA = mid + s * 8; yB = mid - s * 8; }
     const la = svgEl('text', { x: W - m.r + 10, y: yA + 4, class: 'endlab' }); la.textContent = opt.mainLabel || '';
     const lb = svgEl('text', { x: W - m.r + 10, y: yB + 4, class: 'endlab ref' }); lb.textContent = opt.refLabel || '';
-    svg.appendChild(la); svg.appendChild(lb);
+    if ((opt.right || 12) >= 60) { svg.appendChild(la); svg.appendChild(lb); }
   }
   svg.appendChild(path);
 
@@ -416,6 +458,42 @@ function renderPerf() {
   barChart(document.getElementById('monthChart'), S.months);
 }
 
+function renderRisk() {
+  const sec = document.getElementById('riesgo');
+  const R = S.risk;
+  sec.hidden = !R;
+  if (!R) return;
+  const bench = S.bench;
+  const ddl = document.getElementById('ddLegend'); ddl.hidden = !(bench && R.ddB && document.getElementById('ddChart').clientWidth < 560);
+  if (bench) document.getElementById('ddRefName').textContent = bench.nombre;
+  lineChart(document.getElementById('ddChart'), S.c.map((p, i) => ({ x: p.date, y: R.ddV[i], i })), {
+    label: 'Caída de la cartera desde su máximo anterior', zero: true, left: 52, height: 240,
+    ref: bench && R.ddB ? S.c.map((p, i) => ({ x: p.date, y: R.ddB[i] })) : null,
+    right: bench && document.getElementById('ddChart').clientWidth >= 560 ? 104 : 12,
+    mainLabel: 'Vela', refLabel: bench ? bench.nombre : '',
+    fmtAxis: (t) => nf(0).format(t * 100) + ' %',
+    tip: (b) => `<b>${fmtDate(b.x)}</b><span class="row">Vela ${delta(b.y, 2)}</span>` +
+      (bench && R.ddB ? `<span class="row">${bench.nombre} ${delta(R.ddB[b.i], 2)}</span>` : ''),
+  });
+  document.getElementById('ddNote').textContent = R.ddNow < -0.0005
+    ? `Ahora mismo la cartera está un ${pctPlain(-R.ddNow)} por debajo de su máximo.`
+    : 'La cartera está en máximos.';
+  const k = [
+    { t: 'Máxima caída', v: pct(R.maxDD), s: `Peor momento: ${fmtDate(R.ddDate)}`, fill: true },
+    { t: 'Volatilidad anualizada', v: pctPlain(R.vol), s: 'Desviación de las rentabilidades semanales, llevada a un año' },
+    { t: 'Ratio de Sharpe', v: num2(R.sharpe), s: `Rentabilidad anualizada sobre el ${nf(0).format(RF * 100)} % sin riesgo, por unidad de volatilidad` },
+    { t: 'Ratio de Sortino', v: R.sortino != null ? num2(R.sortino) : '—', s: 'Como el Sharpe, pero solo penaliza las semanas negativas' },
+  ];
+  if (R.beta != null) {
+    k.push({ t: `Beta frente al ${bench.nombre}`, v: num2(R.beta), s: 'Cuánto se mueve la cartera por cada 1 % que se mueve el índice' });
+    k.push({ t: 'Correlación', v: num2(R.corr), s: `Con el ${bench.nombre}, de −1 a 1` });
+  }
+  document.getElementById('riskKpis').innerHTML = k
+    .map((x) => `<div class="kpi ${x.fill ? 'fill' : ''}"><dt>${x.t}</dt><dd>${x.v}</dd><small>${esc(x.s)}</small></div>`).join('');
+  document.getElementById('riskNote').textContent =
+    `Calculado con ${R.n} semanas. Con menos de un año de historia, las cifras anualizadas son orientativas.`;
+}
+
 function renderAlloc() {
   const bar = document.getElementById('allocBar');
   bar.innerHTML = S.blocks
@@ -447,7 +525,7 @@ function renderTable() {
     .map((p) => {
       const b = BLOCKS.find((x) => x.id === p.bloque);
       return `<tr>
-      <td class="pn"><span class="sw" style="background:${b.color}"></span><span><strong>${esc(p.nombre)}</strong><small>${p.ticker ? esc(p.ticker) + ', ' : ''}${esc(p.tipo)}, ${esc(p.broker)}</small></span></td>
+      <td class="pn"><span class="sw" style="background:${b.color}"></span><span><strong>${esc(p.nombre)}</strong><small>${p.ticker ? esc(p.ticker) + ', ' : ''}${esc(p.tipo)}, ${esc(p.broker)}</small>${tesisDe(p) ? `<button class="tlink" data-tesis="${esc(p.ticker || p.nombre)}">Leer tesis</button>` : ''}</span></td>
       <td class="hide-s">${p.bloque}</td>
       <td class="num"><span class="wbar"><i style="width:${(p.peso / maxW) * 100}%"></i></span>${pctPlain(p.peso)}</td>
       <td class="num">${delta(p.rent)}</td>
@@ -473,6 +551,23 @@ function renderKpis() {
   document.getElementById('kpis').innerHTML = k
     .map((x) => `<div class="kpi ${x.fill ? 'fill' : ''}"><dt>${x.t}</dt><dd>${x.v}</dd><small>${esc(x.s)}</small></div>`)
     .join('');
+}
+
+function renderLog() {
+  const items = (S.raw.bitacora || []).slice().sort((a, b) => (a.fecha < b.fecha ? 1 : -1));
+  const sec = document.getElementById('bitacora');
+  sec.hidden = !items.length;
+  if (!items.length) return;
+  const all = sec.dataset.all === '1';
+  const show = all ? items : items.slice(0, 4);
+  document.getElementById('logList').innerHTML = show.map((e) => {
+    const d = parseDate(e.fecha);
+    return `<article class="log"><time datetime="${e.fecha}">${d.getDate()} ${MONTHS[d.getMonth()]}<span>${d.getFullYear()}</span></time>
+      <div><h3>${esc(e.titulo)}</h3>${esc(e.texto).split(/\n+/).map((p) => `<p>${p}</p>`).join('')}</div></article>`;
+  }).join('');
+  const more = document.getElementById('logMore');
+  more.hidden = items.length <= 4;
+  more.textContent = all ? 'Ver menos' : `Ver las ${items.length} entradas`;
 }
 
 function renderIdeas() {
@@ -511,8 +606,8 @@ function setUnlocked(v) {
 function renderAll(first) {
   if (first) renderHero(); else document.querySelectorAll('[data-updated]').forEach((e) => (e.textContent = fmtDate(S.updated)));
   const pc = document.getElementById('perfChart');
-  if (!first) pc.dataset.drawn = 1;
-  renderPerf(); renderAlloc(); renderTable(); renderKpis(); renderIdeas(); renderPrivate();
+  if (!first) { pc.dataset.drawn = 1; document.getElementById('ddChart').dataset.drawn = 1; }
+  renderPerf(); renderRisk(); renderAlloc(); renderTable(); renderKpis(); renderLog(); renderIdeas(); renderPrivate();
 }
 function syncSeg() {
   document.querySelectorAll('.seg button').forEach((b) => b.setAttribute('aria-pressed', b.dataset.mode === perfMode));
@@ -524,7 +619,7 @@ function syncSeg() {
   const saved = store.get();
   let data;
   try {
-    data = await loadData(saved);
+    [data] = await Promise.all([loadData(saved), loadTesis()]);
     if (data.error === 'clave') { store.set(null); data = await loadData(); }
     if (data.error) throw new Error(data.detalle || data.error);
   } catch (err) {
@@ -560,6 +655,29 @@ function syncSeg() {
     th.addEventListener('click', go);
     th.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } });
   });
+
+  document.getElementById('logMore').addEventListener('click', () => {
+    const sec = document.getElementById('bitacora'); sec.dataset.all = sec.dataset.all === '1' ? '' : '1'; renderLog();
+  });
+
+  // Tesis
+  const panel = document.getElementById('tesis');
+  const closeTesis = () => { panel.classList.remove('open'); document.body.style.overflow = ''; setTimeout(() => { if (!panel.classList.contains('open')) panel.querySelector('iframe').src = 'about:blank'; }, 400); };
+  document.querySelector('#posTable tbody').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-tesis]');
+    if (!b) return;
+    const p = S.pos.find((x) => (x.ticker || x.nombre) === b.dataset.tesis);
+    const t = tesisDe(p);
+    panel.querySelector('h2').textContent = p.nombre;
+    panel.querySelector('small').textContent = t.fecha ? `Tesis de ${fmtDate(parseDate(t.fecha))}` : 'Tesis de inversión';
+    panel.querySelector('iframe').src = t.archivo;
+    panel.querySelector('.ext').href = t.archivo;
+    panel.classList.add('open'); document.body.style.overflow = 'hidden';
+    panel.querySelector('.close').focus();
+  });
+  panel.querySelector('.close').addEventListener('click', closeTesis);
+  panel.addEventListener('click', (e) => { if (e.target === panel) closeTesis(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && panel.classList.contains('open')) closeTesis(); });
 
   // Menú
   const menu = document.getElementById('menu'), mbtn = document.getElementById('menuBtn');
@@ -599,6 +717,6 @@ function syncSeg() {
   let rt;
   window.addEventListener('resize', () => {
     clearTimeout(rt);
-    rt = setTimeout(() => { document.querySelectorAll('[data-drawn]').forEach((e) => (e.dataset.drawn = 1)); renderPerf(); }, 150);
+    rt = setTimeout(() => { document.querySelectorAll('[data-drawn]').forEach((e) => (e.dataset.drawn = 1)); renderPerf(); renderRisk(); }, 150);
   });
 })();

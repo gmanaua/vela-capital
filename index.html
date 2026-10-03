@@ -4,7 +4,20 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Vela Capital Management</title>
-<meta name="description" content="Cartera personal de fondos, ETFs y acciones: rentabilidad, asignación y posiciones.">
+<meta name="description" content="Rumbo al largo plazo. La cartera personal de Gerard Manau, construida semana a semana: rentabilidad frente al MSCI World, riesgo, asignación y posiciones.">
+<link rel="canonical" href="https://gmanaua.github.io/vela-capital/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Vela Capital Management">
+<meta property="og:title" content="Vela Capital Management">
+<meta property="og:description" content="Rumbo al largo plazo. La cartera personal de Gerard Manau, construida semana a semana.">
+<meta property="og:url" content="https://gmanaua.github.io/vela-capital/">
+<meta property="og:image" content="https://gmanaua.github.io/vela-capital/assets/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Vela Capital Management. Rumbo al largo plazo.">
+<meta property="og:locale" content="es_ES">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#ffffff">
 <link rel="icon" href="assets/logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -235,6 +248,27 @@ footer p{max-width:60ch;color:var(--muted)}
 }
 .load-err{position:fixed;z-index:80;left:50%;bottom:24px;transform:translateX(-50%);background:var(--white);border:1px solid var(--ink);padding:12px 16px;font-size:14px;max-width:calc(100% - 32px)}
 body.loading main section:not(.hero),body.failed main section:not(.hero){visibility:hidden}
+.log{display:grid;grid-template-columns:160px 1fr;gap:24px;border-top:1px solid var(--hair);padding:18px 0 22px}
+.log:first-child{border-top:0;padding-top:6px}
+.log time{font-size:24px;letter-spacing:-.5px;line-height:1.1}
+.log time span{display:block;font-size:12px;color:var(--muted);letter-spacing:-.36px;margin-top:4px}
+.log h3{font-weight:500;font-size:16px;margin-bottom:6px}
+.log p{max-width:68ch;margin-bottom:8px}
+[hidden]{display:none!important}
+@media (max-width:600px){.log{grid-template-columns:1fr;gap:6px}.log time{font-size:16px}.log time span{display:inline;margin-left:6px}}
+.tlink{display:inline-block;margin-top:4px;font-size:12px;border-bottom:1px solid var(--ink);padding:0 0 1px;cursor:pointer}
+.tlink:hover{color:var(--carbon)}
+.tesis{position:fixed;inset:0;z-index:65;background:rgba(255,255,255,.7);opacity:0;visibility:hidden;transition:opacity .3s,visibility .3s}
+.tesis.open{opacity:1;visibility:visible}
+.tesis .sheet{position:absolute;top:0;right:0;bottom:0;width:min(860px,100%);background:var(--white);border-left:1px solid var(--ink);display:flex;flex-direction:column;transform:translateX(24px);transition:transform .35s cubic-bezier(.2,.7,.2,1)}
+.tesis.open .sheet{transform:none}
+.sheet-h{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:14px var(--gut);border-bottom:1px solid var(--ink)}
+.sheet-h h2{font-weight:400;font-size:24px;letter-spacing:-.5px;line-height:1.2}
+.sheet-a{display:flex;align-items:center;gap:14px}
+.sheet-a .burger i{box-shadow:none;transform:rotate(45deg)}
+.sheet-a .burger i::after{content:"";display:block;width:16px;height:1px;background:var(--ink);transform:rotate(90deg)}
+.tesis iframe{flex:1;width:100%;border:0;background:var(--white)}
+@media (max-width:600px){.sheet-a .ext{display:none}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
 </style>
 </head>
@@ -253,9 +287,11 @@ body.loading main section:not(.hero),body.failed main section:not(.hero){visibil
   <nav aria-label="Secciones">
     <a href="#timon">Al timón</a>
     <a href="#rendimiento">Rendimiento</a>
+    <a href="#riesgo">Riesgo</a>
     <a href="#asignacion">Asignación</a>
     <a href="#posiciones">Posiciones</a>
     <a href="#indicadores">Indicadores</a>
+    <a href="#bitacora">Bitácora</a>
     <a href="#radar">En el radar</a>
     <a href="#privado">Patrimonio</a>
   </nav>
@@ -315,6 +351,18 @@ body.loading main section:not(.hero),body.failed main section:not(.hero){visibil
     </div>
   </section>
 
+  <section class="sec" id="riesgo" style="padding-top:0">
+    <div class="wrap">
+      <div class="sec-h"><h2>Riesgo</h2><p>Cuánto se mueve la cartera y cuánto ha llegado a caer, calculado con los datos de cada viernes.</p></div>
+      <h3 class="sub-h">Caída desde máximos</h3>
+      <p class="note" id="ddNote"></p>
+      <div class="legend" id="ddLegend" hidden><span><i class="lg main"></i>Vela</span><span><i class="lg ref"></i><span id="ddRefName">MSCI World</span></span></div>
+      <div class="chart" id="ddChart"></div>
+      <dl class="kpis" id="riskKpis" style="margin-top:24px"></dl>
+      <p class="note" id="riskNote" style="margin-top:12px"></p>
+    </div>
+  </section>
+
   <section class="sec" id="asignacion" style="padding-top:0">
     <div class="wrap">
       <div class="sec-h"><h2>Asignación</h2><p>Cuatro bloques con un papel distinto cada uno, en peso sobre lo invertido.</p></div>
@@ -358,6 +406,14 @@ body.loading main section:not(.hero),body.failed main section:not(.hero){visibil
     </div>
   </section>
 
+  <section class="sec" id="bitacora" style="padding-top:0" hidden>
+    <div class="wrap">
+      <div class="sec-h"><h2>Bitácora</h2><p>Qué ha cambiado en la cartera y por qué, mes a mes.</p></div>
+      <div id="logList"></div>
+      <button class="ghost" id="logMore" hidden style="margin-top:24px"></button>
+    </div>
+  </section>
+
   <section class="sec" id="radar" style="padding-top:0">
     <div class="wrap">
       <div class="sec-h"><h2>En el radar</h2><p>Ideas en estudio. No son posiciones abiertas.</p></div>
@@ -389,6 +445,16 @@ body.loading main section:not(.hero),body.failed main section:not(.hero){visibil
     <p>Cartera personal con fines informativos. Nada de lo publicado aquí es una recomendación de inversión. Rentabilidades pasadas no garantizan rentabilidades futuras.</p>
   </div>
 </footer>
+
+<div class="tesis" id="tesis" role="dialog" aria-modal="true" aria-labelledby="tesisT">
+  <div class="sheet">
+    <div class="sheet-h">
+      <div><h2 id="tesisT"></h2><small></small></div>
+      <div class="sheet-a"><a class="ext li" target="_blank" rel="noopener">Abrir en pestaña nueva</a><button class="close burger" aria-label="Cerrar tesis"><i></i></button></div>
+    </div>
+    <iframe title="Tesis de inversión" loading="lazy"></iframe>
+  </div>
+</div>
 
 <div class="lock" id="lock" role="dialog" aria-modal="true" aria-labelledby="lockT">
   <form id="lockForm">
