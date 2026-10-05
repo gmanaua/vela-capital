@@ -50,6 +50,11 @@ small{font-size:12px;letter-spacing:-.36px;color:var(--muted);display:block}
 .top-r{display:flex;gap:6px;align-items:center}
 .ghost{height:40px;padding:0 14px;border:1px solid var(--ink);background:var(--white);font-size:14px;letter-spacing:-.3px;white-space:nowrap}
 .ghost:hover{background:var(--ink);color:var(--white)}
+.ghost:has(.key){display:inline-flex;align-items:center;gap:8px}
+.key{display:block;flex:none}
+.keybtn{width:40px;height:40px;border:1px solid var(--ink);background:var(--white);display:grid;place-items:center}
+.keybtn:hover,.keybtn[aria-pressed=true]{background:var(--ink);color:var(--white)}
+.keybtn[aria-pressed=true]:hover{background:var(--carbon)}
 .burger{width:40px;height:40px;border:1px solid var(--ink);background:var(--white);display:grid;place-items:center}
 .burger i{display:block;width:16px;height:1px;background:var(--ink);box-shadow:0 -5px 0 var(--ink),0 5px 0 var(--ink);transition:.25s}
 .burger[aria-expanded=true] i{box-shadow:none;transform:rotate(45deg)}
@@ -71,9 +76,8 @@ small{font-size:12px;letter-spacing:-.36px;color:var(--muted);display:block}
 
 /* secciones */
 section.sec{padding:var(--sec) 0}
-.sec-h{display:grid;grid-template-columns:1fr auto;align-items:end;gap:24px;border-bottom:1px solid var(--ink);padding-bottom:12px;margin-bottom:24px}
+.sec-h{border-bottom:1px solid var(--ink);padding-bottom:12px;margin-bottom:24px}
 .sec-h h2{font-weight:400;font-size:clamp(32px,5vw,48px);line-height:1.1;letter-spacing:-.04em}
-.sec-h p{font-size:14px;color:var(--muted);max-width:44ch;text-align:right}
 .band-polar{background:linear-gradient(rgba(191,224,247,.86),rgba(191,224,247,.9)),url(assets/towers.webp) center 30%/cover no-repeat}
 .band-polar .sec-h{border-color:var(--carbon)}
 
@@ -217,8 +221,6 @@ footer p{max-width:60ch;color:var(--muted)}
 }
 @media (max-width:600px){
   :root{--sec:60px}
-  .sec-h{grid-template-columns:1fr}
-  .sec-h p{text-align:left}
   .top .ghost{display:none}
   .alist li{grid-template-columns:14px 1fr auto auto;gap:10px}
   .alist .v{display:none}
@@ -297,7 +299,7 @@ button.li{background:none;border:0;border-bottom:1px solid var(--ink);cursor:poi
 <header class="top">
   <a class="mark" href="#inicio"><img src="assets/logo.png" alt="" width="38" height="25">Vela Capital Management</a>
   <div class="top-r">
-    <button class="ghost" data-lockbtn>Ver importes</button>
+    <button class="keybtn" data-lockbtn aria-label="Ver importes" title="Ver importes" aria-pressed="false"><svg class="key" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1,5" stroke-linecap="square" d="M10 14 20 4M16.5 7.5l2.5 2.5M14 10l1.75 1.75"/><circle cx="7.5" cy="16.5" r="3.5" fill="none" stroke="currentColor" stroke-width="1,5"/></svg></button>
     <button class="burger" id="menuBtn" aria-label="Menú" aria-expanded="false" aria-controls="menu"><i></i></button>
   </div>
 </header>
@@ -314,7 +316,7 @@ button.li{background:none;border:0;border-bottom:1px solid var(--ink);cursor:poi
     <a href="#radar">En el radar</a>
     <a href="#privado">Patrimonio</a>
   </nav>
-  <div class="foot"><span>Actualizado el <span data-updated></span></span><span style="display:flex;gap:16px"><a class="li" href="https://www.linkedin.com/in/gerard-manau-andujar" target="_blank" rel="noopener"><svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4.98 3.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5zM3 9.75h4v11H3zm7 0h3.8v1.5h.06c.53-.95 1.83-1.95 3.77-1.95 4.03 0 4.77 2.5 4.77 5.75v5.7h-4v-5.05c0-1.2-.02-2.75-1.7-2.75-1.7 0-1.95 1.3-1.95 2.65v5.15H10z"/></svg>LinkedIn</a><button class="li share" data-share type="button"><svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" d="M12 3v12M7 8l5-5 5 5M5 13v7h14v-7"/></svg><span>Compartir</span></button><button data-lockbtn>Ver importes</button></span></div>
+  <div class="foot"><span>Actualizado el <span data-updated></span></span><span style="display:flex;gap:16px"><a class="li" href="https://www.linkedin.com/in/gerard-manau-andujar" target="_blank" rel="noopener"><svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4.98 3.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5zM3 9.75h4v11H3zm7 0h3.8v1.5h.06c.53-.95 1.83-1.95 3.77-1.95 4.03 0 4.77 2.5 4.77 5.75v5.7h-4v-5.05c0-1.2-.02-2.75-1.7-2.75-1.7 0-1.95 1.3-1.95 2.65v5.15H10z"/></svg>LinkedIn</a><button class="li share" data-share type="button"><svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" d="M12 3v12M7 8l5-5 5 5M5 13v7h14v-7"/></svg><span>Compartir</span></button><button class="li" data-lockbtn type="button"><svg class="key" width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" d="M10 14 20 4M16.5 7.5l2.5 2.5M14 10l1.75 1.75"/><circle cx="7.5" cy="16.5" r="3.5" fill="none" stroke="currentColor" stroke-width="2"/></svg><span class="lbl">Ver importes</span></button></span></div>
 </div>
 
 <p class="load-err" id="loadErr" hidden>No se han podido cargar los datos de la cartera. Recarga la página en unos minutos.</p>
@@ -330,7 +332,7 @@ button.li{background:none;border:0;border-bottom:1px solid var(--ink);cursor:poi
 
   <section class="sec" id="timon">
     <div class="wrap">
-      <div class="sec-h"><h2>Al timón</h2><p>Quién gestiona la cartera y con qué criterio.</p></div>
+      <div class="sec-h"><h2>Al timón</h2></div>
       <div class="helm">
         <figure class="portrait" id="portrait">
           <div class="frame"><img src="assets/gerard.webp" alt="Retrato de Gerard Manau" width="720" height="900"></div>
@@ -350,7 +352,7 @@ button.li{background:none;border:0;border-bottom:1px solid var(--ink);cursor:poi
 
   <section class="sec" id="rendimiento" style="padding-top:0">
     <div class="wrap">
-      <div class="sec-h"><h2>Rendimiento</h2><p>Valor de la cartera registrado cada viernes. Pasa el cursor por el gráfico para ver cada semana.</p></div>
+      <div class="sec-h"><h2>Rendimiento</h2></div>
       <div class="perf-top">
         <div class="seg" role="group" aria-label="Medida">
           <button data-mode="pct">Rentabilidad</button>
@@ -371,7 +373,7 @@ button.li{background:none;border:0;border-bottom:1px solid var(--ink);cursor:poi
 
   <section class="sec" id="riesgo" style="padding-top:0">
     <div class="wrap">
-      <div class="sec-h"><h2>Riesgo</h2><p>Cuánto se mueve la cartera y cuánto ha llegado a caer, calculado con los datos de cada viernes.</p></div>
+      <div class="sec-h"><h2>Riesgo</h2></div>
       <h3 class="sub-h">Caída desde máximos</h3>
       <p class="note" id="ddNote"></p>
       <div class="legend" id="ddLegend" hidden><span><i class="lg main"></i>Vela</span><span><i class="lg ref"></i><span id="ddRefName">MSCI World</span></span></div>
@@ -383,7 +385,7 @@ button.li{background:none;border:0;border-bottom:1px solid var(--ink);cursor:poi
 
   <section class="sec" id="asignacion" style="padding-top:0">
     <div class="wrap">
-      <div class="sec-h"><h2>Asignación</h2><p>Cuatro bloques con un papel distinto cada uno, en peso sobre lo invertido.</p></div>
+      <div class="sec-h"><h2>Asignación</h2></div>
       <div class="alloc">
         <div>
           <div class="stack" id="allocBar" role="img" aria-label="Peso por bloque"></div>
@@ -400,7 +402,7 @@ button.li{background:none;border:0;border-bottom:1px solid var(--ink);cursor:poi
 
   <section class="sec" id="posiciones" style="padding-top:0">
     <div class="wrap">
-      <div class="sec-h"><h2>Posiciones</h2><p>Pulsa una columna para ordenar. Los importes se ven con acceso privado.</p></div>
+      <div class="sec-h"><h2>Posiciones</h2></div>
       <div class="tbl-wrap">
         <table id="posTable">
           <thead><tr>
@@ -419,14 +421,14 @@ button.li{background:none;border:0;border-bottom:1px solid var(--ink);cursor:poi
 
   <section class="sec" id="indicadores" style="padding-top:0">
     <div class="wrap">
-      <div class="sec-h"><h2>Indicadores</h2><p>Concentración, exposición y extremos de la cartera.</p></div>
+      <div class="sec-h"><h2>Indicadores</h2></div>
       <dl class="kpis" id="kpis"></dl>
     </div>
   </section>
 
   <section class="sec" id="bitacora" style="padding-top:0" hidden>
     <div class="wrap">
-      <div class="sec-h"><h2>Bitácora</h2><p>Qué ha cambiado en la cartera y por qué, mes a mes.</p></div>
+      <div class="sec-h"><h2>Bitácora</h2></div>
       <div id="logList"></div>
       <button class="ghost" id="logMore" hidden style="margin-top:24px"></button>
     </div>
@@ -434,17 +436,17 @@ button.li{background:none;border:0;border-bottom:1px solid var(--ink);cursor:poi
 
   <section class="sec" id="radar" style="padding-top:0">
     <div class="wrap">
-      <div class="sec-h"><h2>En el radar</h2><p>Ideas en estudio. No son posiciones abiertas.</p></div>
+      <div class="sec-h"><h2>En el radar</h2></div>
       <div id="ideas"></div>
     </div>
   </section>
 
   <section class="sec band-polar" id="privado">
     <div class="wrap">
-      <div class="sec-h"><h2>Patrimonio</h2><p>Importes en euros, visibles solo con contraseña.</p></div>
+      <div class="sec-h"><h2>Patrimonio</h2></div>
       <div class="lock-msg">
         <p>Esta sección muestra cifras en euros y está protegida.</p>
-        <button class="ghost" data-lockbtn>Ver importes</button>
+        <button class="ghost" data-lockbtn><svg class="key" width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" d="M10 14 20 4M16.5 7.5l2.5 2.5M14 10l1.75 1.75"/><circle cx="7.5" cy="16.5" r="3.5" fill="none" stroke="currentColor" stroke-width="2"/></svg><span class="lbl">Ver importes</span></button>
       </div>
       <div class="priv-only priv-grid">
         <dl class="kpis" id="privKpis"></dl>
@@ -486,7 +488,7 @@ button.li{background:none;border:0;border-bottom:1px solid var(--ink);cursor:poi
 </div>
 
 <script>window.VELA_API = "https://script.google.com/macros/s/AKfycbxrb1sMOMEzOZFFB7YRKoFx7_sXQNclwhNSeVmtrkcwODzR_KAxquxxIwFJtw6z7-1Upw/exec";</script>
-<script src="app.js?v=6ab3d771" defer></script>
+<script src="app.js?v=7e86a240" defer></script>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 </body>
 </html>

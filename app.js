@@ -614,7 +614,11 @@ function renderPrivate() {
 function setUnlocked(v) {
   unlocked = v;
   document.body.classList.toggle('unlocked', v);
-  document.querySelectorAll('[data-lockbtn]').forEach((b) => (b.textContent = v ? 'Ocultar importes' : 'Ver importes'));
+  const lbl = v ? 'Ocultar importes' : 'Ver importes';
+  document.querySelectorAll('[data-lockbtn]').forEach((b) => {
+    const t = b.querySelector('.lbl');
+    if (t) t.textContent = lbl; else { b.setAttribute('aria-label', lbl); b.title = lbl; b.setAttribute('aria-pressed', v); }
+  });
   document.querySelector('[data-mode="eur"]').disabled = !v;
   if (!v && perfMode === 'eur') perfMode = 'pct';
   syncSeg();
