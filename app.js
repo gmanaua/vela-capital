@@ -572,9 +572,24 @@ function renderLog() {
 }
 
 function renderIdeas() {
-  document.getElementById('ideas').innerHTML = S.raw.ideas
-    .map((i) => `<li><strong>${esc(i.nombre)}</strong><span>${i.ticker ? esc(i.ticker) : esc(i.isin)}</span><em>${esc(
-i.tipo)}</em></li>`)
+  // Agrupadas por tipo: primero acciones, fondos y ETF; cualquier otro tipo, después y por orden alfabético
+  const orden = ['Acción', 'Fondo', 'ETF'];
+  const plural = { 'Acción': 'Acciones', Fondo: 'Fondos', ETF: 'ETF' };
+  const grupos = {};
+  S.raw.ideas.forEach((i) => (grupos[i.tipo || 'Otros'] ||= []).push(i));
+  const tipos = Object.keys(grupos).sort((a, b) => {
+    const ia = orden.indexOf(a), ib = orden.indexOf(b);
+    return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib) || a.localeCompare(b, 'es');
+  });
+  const box = document.getElementById('ideas');
+  const abiertos = new Set([...box.querySelectorAll('details[open]')].map((d) => d.dataset.tipo));
+  box.innerHTML = tipos
+    .map((t) => `<details class="rgroup" data-tipo="${esc(t)}"${abiertos.has(t) ? ' open' : ''}>
+      <summary><h3>${esc(plural[t] || t)}</h3><span class="rcount">${grupos[t].length} ${grupos[t].length === 1 ? 'idea' : 'ideas'}</span><i class="pm" aria-hidden="true"></i></summary>
+      <ul class="ideas">${grupos[t]
+        .map((i) => `<li><strong>${esc(i.nombre)}</strong><span>${i.ticker ? esc(i.ticker) : esc(i.isin)}</span></li>`)
+        .join('')}</ul>
+    </details>`)
     .join('');
 }
 
