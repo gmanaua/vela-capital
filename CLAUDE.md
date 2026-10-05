@@ -5,7 +5,8 @@ Web estática publicada con GitHub Pages en https://gmanaua.github.io/vela-capit
 ## Arquitectura
 - `index.html`: maquetación y todo el CSS (estilo editorial: Instrument Sans, grafito #3a3a3e sobre blanco, tintes melocotón/lavanda/azul/fucsia solo como fondos de tarjeta, esquinas a 0 px, sin sombras).
 - `app.js`: lógica. Carga los datos de `window.VELA_API` (definido en `index.html`), calcula rentabilidad ponderada por tiempo, meses, bloques, riesgo (volatilidad, máxima caída, Sharpe, Sortino, beta, correlación) y pinta los gráficos en SVG a mano.
-- `apps-script/Codigo.gs`: script de Google Apps Script que vive dentro de la Google Sheet de Gerard. NO se ejecuta desde aquí: se copia en Extensiones → Apps Script y se publica como aplicación web (Implementar → Gestionar implementaciones → Nueva versión). Lee las pestañas WEB, CARTERA, PATRIMONIO, IDEAS y BITÁCORA y devuelve JSON.
+- `apps-script/Codigo.gs`: script de Google Apps Script que vive dentro de la Google Sheet de Gerard. NO se ejecuta desde aquí: se copia en Extensiones → Apps Script y se publica como aplicación web (Implementar → Gestionar implementaciones → Nueva versión). Lee las pestañas WEB, CARTERA, PATRIMONIO, IDEAS, BITÁCORA y EXPOSICION y devuelve JSON.
+- Exposición: pestaña EXPOSICION (Pestaña | Categoría | % | Datos a), creada con el menú Vela web → Crear pestaña EXPOSICION. Llega como `exposicion: [{ nombre, fecha, items: [{ nombre, pct }] }]`; cada valor distinto de "Pestaña" es una pestaña en la web. Sin datos, la sección se oculta.
 - `tesis/index.json`: mapa ticker → archivo HTML de tesis (`{"NFLX": {"archivo": "tesis/nflx.html", "fecha": "2026-09-15"}}`). Las posiciones con tesis muestran "Leer tesis".
 - `assets/`: logo, retrato, imagen para compartir (og.jpg) y fondo de la sección privada.
 

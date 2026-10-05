@@ -571,6 +571,28 @@ function renderLog() {
   more.textContent = all ? 'Ver menos' : `Ver las ${items.length} entradas`;
 }
 
+let expTab = 0;
+function renderExpo() {
+  const grupos = (S.raw.exposicion || []).filter((g) => g.items && g.items.length);
+  const sec = document.getElementById('exposicion');
+  sec.hidden = !grupos.length;
+  if (!grupos.length) return;
+  if (expTab >= grupos.length) expTab = 0;
+  document.getElementById('expTabs').innerHTML = grupos
+    .map((g, i) => `<button type="button" data-exp="${i}" aria-pressed="${i === expTab}">${esc(g.nombre)}</button>`)
+    .join('');
+  const g = grupos[expTab];
+  const items = [...g.items].sort((a, b) => b.pct - a.pct);
+  const max = Math.max(...items.map((i) => i.pct)) || 1;
+  const list = document.getElementById('expList');
+  list.innerHTML = items
+    .map((i) => `<li><span>${esc(i.nombre)}</span><span class="num">${pctPlain(i.pct)}</span><span class="wbar"><i style="width:0" data-w="${Math.max(0, i.pct / max) * 100}"></i></span></li>`)
+    .join('');
+  // Las barras crecen desde cero al cambiar de pestaña
+  requestAnimationFrame(() => requestAnimationFrame(() => list.querySelectorAll('i[data-w]').forEach((b) => (b.style.width = b.dataset.w + '%'))));
+  document.getElementById('expNote').textContent = g.fecha ? `Datos a ${fmtDate(parseDate(g.fecha))}.` : '';
+}
+
 function renderIdeas() {
   // Agrupadas por tipo: primero acciones, fondos y ETF; cualquier otro tipo, después y por orden alfabético
   const orden = ['Acción', 'Fondo', 'ETF'];
@@ -627,10 +649,10 @@ function renderAll(first) {
   if (first) renderHero(); else document.querySelectorAll('[data-updated]').forEach((e) => (e.textContent = fmtDate(S.updated)));
   const pc = document.getElementById('perfChart');
   if (!first) { pc.dataset.drawn = 1; document.getElementById('ddChart').dataset.drawn = 1; }
-  renderPerf(); renderRisk(); renderAlloc(); renderTable(); renderKpis(); renderLog(); renderIdeas(); renderPrivate();
+  renderPerf(); renderRisk(); renderAlloc(); renderExpo(); renderTable(); renderKpis(); renderLog(); renderIdeas(); renderPrivate();
 }
 function syncSeg() {
-  document.querySelectorAll('.seg button').forEach((b) => b.setAttribute('aria-pressed', b.dataset.mode === perfMode));
+  document.querySelectorAll('.seg button[data-mode]').forEach((b) => b.setAttribute('aria-pressed', b.dataset.mode === perfMode));
 }
 
 /* ---------- arranque ---------- */
@@ -671,12 +693,16 @@ function syncSeg() {
   window.addEventListener('scroll', onScroll, { passive: true }); onScroll();
   setUnlocked(S.priv);
 
-  document.querySelectorAll('.seg button').forEach((b) =>
+  document.querySelectorAll('.seg button[data-mode]').forEach((b) =>
     b.addEventListener('click', () => {
       if (b.disabled) return;
       perfMode = b.dataset.mode; syncSeg(); delete document.getElementById('perfChart').dataset.drawn; renderPerf();
     }));
   syncSeg();
+  document.getElementById('expTabs').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-exp]');
+    if (b && +b.dataset.exp !== expTab) { expTab = +b.dataset.exp; renderExpo(); }
+  });
 
   document.querySelectorAll('#posTable th[data-k]').forEach((th) => {
     const go = () => {

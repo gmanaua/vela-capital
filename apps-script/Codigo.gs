@@ -92,6 +92,27 @@ function cambiarClave() {
 }
 
 /* ------------------------------------------------------------------ */
+/*  Crea la pestaña EXPOSICION con las categorías (los % los pones tú)  */
+/* ------------------------------------------------------------------ */
+function crearExposicion() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ui = SpreadsheetApp.getUi();
+  if (ss.getSheetByName('EXPOSICION')) return ui.alert('La pestaña EXPOSICION ya existe. No se ha tocado.');
+  const sh = ss.insertSheet('EXPOSICION');
+  const sectores = ['Consumo Cíclico', 'Industriales', 'Tecnología', 'Materiales Básicos', 'Inmobiliario', 'Consumo Defensivo',
+    'Servicios Financieros', 'Salud', 'Energía', 'Servicios de Comunicación', 'Servicios Públicos'];
+  const activos = ['Acciones', 'Bonos', 'Otros activos', 'Acciones preferentes', 'Convertible', 'Cash'];
+  const filas = [...sectores.map((n) => ['Sectorial', n, '', '']), ...activos.map((n) => ['Asset allocation', n, '', ''])];
+  sh.getRange('A1:D1').setValues([['Pestaña', 'Categoría', '%', 'Datos a']]).setFontWeight('bold');
+  sh.getRange(2, 1, filas.length, 4).setValues(filas);
+  sh.setFrozenRows(1);
+  sh.getRange('C2:C').setNumberFormat('0.0%');
+  sh.getRange('D2:D').setNumberFormat('dd/mm/yyyy');
+  sh.setColumnWidth(1, 140); sh.setColumnWidth(2, 220); sh.setColumnWidth(3, 80); sh.setColumnWidth(4, 100);
+  ui.alert('Pestaña EXPOSICION creada. Rellena la columna % (y la fecha de los datos). Las filas sin % no se muestran en la web.');
+}
+
+/* ------------------------------------------------------------------ */
 /*  3. Lo que llama la web                                             */
 /* ------------------------------------------------------------------ */
 function doGet(e) {
@@ -166,9 +187,28 @@ function construir(privado) {
     });
   }
 
+  // Exposición (pestaña EXPOSICION: Pestaña | Categoría | % | Datos a). Solo porcentajes.
+  const exposicion = [];
+  const ex = ss.getSheetByName('EXPOSICION');
+  if (ex && ex.getLastRow() > 1) {
+    ex.getRange(2, 1, ex.getLastRow() - 1, 4).getValues().forEach(([g, n, x, f]) => {
+      if (!g || !n || typeof x !== 'number') return;
+      const nombre = String(g).trim();
+      let grupo = exposicion.find((e) => e.nombre === nombre);
+      if (!grupo) exposicion.push((grupo = { nombre, fecha: null, items: [] }));
+      grupo.items.push({ nombre: String(n).trim(), pct: x });
+      if (f instanceof Date && (!grupo.fecha || iso(f) > grupo.fecha)) grupo.fecha = iso(f);
+    });
+    // Admite la celda con formato % (0,368) o el número escrito a mano (36,8)
+    exposicion.forEach((grupo) => {
+      if (grupo.items.reduce((s, i) => s + i.pct, 0) > 1.5) grupo.items.forEach((i) => (i.pct /= 100));
+    });
+  }
+
   const out = {
     privado,
     bitacora,
+    exposicion,
     bench: referencia(semanas.map((s) => s.f)),
     actualizado: cartera.length ? cartera[cartera.length - 1].fecha : null,
     cashPct: cash / (cash + invertido),
@@ -228,6 +268,7 @@ function probar() {
   const d = construir(false);
   Logger.log('Semanas: %s, última: %s, rentabilidad última semana: %s', d.cartera.length, d.actualizado, d.cartera[d.cartera.length - 1].r);
   Logger.log('Posiciones: %s, ideas: %s, liquidez: %s', d.posiciones.length, d.ideas.length, d.cashPct);
+  Logger.log('Exposición: %s', d.exposicion.map((g) => g.nombre + ' (' + g.items.length + ')').join(', ') || 'sin datos');
   Logger.log('MSCI World: %s', d.bench ? 'acumulada ' + d.bench.acum[d.bench.acum.length - 1] : 'no disponible');
 }
 
@@ -235,6 +276,7 @@ function probar() {
 function onOpen() {
   SpreadsheetApp.getUi().createMenu('Vela web')
     .addItem('Crear / rehacer hoja WEB', 'configurar')
+    .addItem('Crear pestaña EXPOSICION', 'crearExposicion')
     .addItem('Cambiar contraseña', 'cambiarClave')
     .addToUi();
 }
