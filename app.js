@@ -13,6 +13,20 @@ const MONTHS = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
 const MONTHS_LONG = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+/* ---------- tema claro / oscuro ---------- */
+// El tema ya lo fija el script del <head> antes de pintar; aquí solo se cambia y se recuerda
+const THEME_STORE = 'vela-theme';
+let dotInk = '#3a3a3e'; // color de los puntos de la esfera, sigue a --ink
+function applyTheme(t, save) {
+  document.documentElement.dataset.theme = t;
+  if (save) { try { localStorage.setItem(THEME_STORE, t); } catch {} }
+  dotInk = getComputedStyle(document.documentElement).getPropertyValue('--ink').trim() || '#3a3a3e';
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.content = getComputedStyle(document.body).backgroundColor;
+  const b = document.getElementById('themeBtn');
+  if (b) { const l = t === 'dark' ? 'Activar modo claro' : 'Activar modo oscuro'; b.setAttribute('aria-label', l); b.title = l; }
+}
+
 /* ---------- formato ---------- */
 const nf = (d) => {
   const f = new Intl.NumberFormat('es-ES', { minimumFractionDigits: d, maximumFractionDigits: d, useGrouping: 'always' });
@@ -241,8 +255,8 @@ function lineChart(host, pts, opt) {
   const defs = svgEl('defs');
   const gid = 'g' + Math.random().toString(36).slice(2, 7);
   const lg = svgEl('linearGradient', { id: gid, x1: 0, x2: 0, y1: 0, y2: 1 });
-  lg.appendChild(svgEl('stop', { offset: '0', 'stop-color': '#ffcf9e', 'stop-opacity': '0.85' }));
-  lg.appendChild(svgEl('stop', { offset: '1', 'stop-color': '#ffcf9e', 'stop-opacity': '0' }));
+  lg.appendChild(svgEl('stop', { offset: '0', class: 'astop', 'stop-color': '#ffcf9e', 'stop-opacity': '0.85' }));
+  lg.appendChild(svgEl('stop', { offset: '1', class: 'astop', 'stop-color': '#ffcf9e', 'stop-opacity': '0' }));
   defs.appendChild(lg);
   svg.appendChild(defs);
 
@@ -385,15 +399,17 @@ function sphere(canvas) {
       if (py > H + 4) continue;
       const s = 0.5 + depth * 1.3;
       ctx.globalAlpha = 0.1 + depth * 0.75;
-      ctx.fillStyle = k < 0.08 ? '#d98a3d' : k < 0.14 ? '#7b80d6' : '#3a3a3e';
+      ctx.fillStyle = k < 0.08 ? '#d98a3d' : k < 0.14 ? '#7b80d6' : dotInk;
       ctx.fillRect(px - s / 2, py - s / 2, s, s);
     }
     ctx.globalAlpha = 1;
     a += 0.0016;
     if (!reduceMotion) requestAnimationFrame(frame);
   };
+  redrawSphere = frame;
   frame();
 }
+let redrawSphere = null;
 
 /* ---------- cifra que cuenta ---------- */
 function countUp(el, to, fmt, dur = 1600) {
@@ -657,6 +673,18 @@ function syncSeg() {
 
 /* ---------- arranque ---------- */
 (async function init() {
+  // Tema: el botón funciona aunque fallen los datos; sin elección guardada, sigue al sistema
+  applyTheme(document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light');
+  document.getElementById('themeBtn').addEventListener('click', () => {
+    applyTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark', true);
+    if (reduceMotion && redrawSphere) redrawSphere();
+  });
+  const mq = window.matchMedia('(prefers-color-scheme: dark)');
+  mq.addEventListener?.('change', (e) => {
+    let own = null; try { own = localStorage.getItem(THEME_STORE); } catch {}
+    if (!own) { applyTheme(e.matches ? 'dark' : 'light'); if (reduceMotion && redrawSphere) redrawSphere(); }
+  });
+
   // Si ya se desbloqueó en esta pestaña, se pide directamente la versión privada
   const saved = store.get();
   let data;
