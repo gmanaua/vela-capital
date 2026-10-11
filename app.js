@@ -95,7 +95,26 @@ async function loadTesis() {
 }
 const tesisDe = (p) => (p.ticker && TESIS[p.ticker]) || TESIS[p.nombre] || null;
 
+// Histórico anterior a la Sheet: historico.json (solo porcentajes; lo genera herramientas/historico.js)
+let HIST = null;
+async function loadHist() {
+  try { const r = await fetch('historico.json', { cache: 'no-cache' }); if (r.ok) HIST = await r.json(); } catch {}
+}
+// Lo pone delante si su última fecha es la primera semana de la Sheet; si no enlaza, se ignora
+function conHistorico(d) {
+  const h = HIST;
+  if (!h || !Array.isArray(h.cartera) || !h.cartera.length || !d.cartera.length) return d;
+  if (h.cartera[h.cartera.length - 1].fecha !== d.cartera[0].fecha) return d;
+  let bench = null;
+  if (d.bench && h.bench && Array.isArray(d.bench.acum) && d.bench.acum.length === d.cartera.length && h.bench.acum.length === h.cartera.length) {
+    const b0 = 1 + h.bench.acum[h.bench.acum.length - 1];
+    bench = { ...d.bench, acum: [...h.bench.acum, ...d.bench.acum.slice(1).map((x) => (x == null ? null : b0 * (1 + x) - 1))] };
+  }
+  return { ...d, cartera: [...h.cartera, ...d.cartera.slice(1)], bench, historico: { desde: h.desde, hasta: h.hasta } };
+}
+
 function derive(d) {
+  d = conHistorico(d);
   const priv = !!d.privado;
   // Rentabilidad ponderada por tiempo (cada semana ya descuenta aportaciones)
   const c = d.cartera.map((p) => ({ ...p, date: parseDate(p.fecha) }));
@@ -240,12 +259,14 @@ function lineChart(host, pts, opt) {
   });
   // etiquetas de mes
   const first = new Date(x0); let d = new Date(first.getFullYear(), first.getMonth() + 1, 1);
-  const every = W < 560 ? 2 : 1;
+  // con más de un año de historia se saltan meses para que no se pisen, y enero lleva el año
+  const nMeses = (new Date(x1).getFullYear() - first.getFullYear()) * 12 + new Date(x1).getMonth() - first.getMonth();
+  const every = Math.max(1, Math.ceil(nMeses / (W < 560 ? 5 : 11)));
   let i = 0;
   while (d.getTime() <= x1) {
     if (i++ % every === 0) {
       const lab = svgEl('text', { x: X(d.getTime()), y: H - 8, 'text-anchor': 'middle' });
-      lab.textContent = MONTHS[d.getMonth()];
+      lab.textContent = MONTHS[d.getMonth()] + (nMeses > 12 && d.getMonth() < every ? ' ' + String(d.getFullYear()).slice(2) : '');
       grid.appendChild(lab);
     }
     d = new Date(d.getFullYear(), d.getMonth() + 1, 1);
@@ -330,6 +351,9 @@ function lineChart(host, pts, opt) {
 function barChart(host, months) {
   host.innerHTML = '';
   const W = host.clientWidth, H = 220;
+  // caben unos 44 px por barra: en pantallas estrechas se muestran solo los meses más recientes
+  months = months.slice(-Math.max(6, Math.floor(W / 44)));
+  const varios = new Set(months.map((x) => x.y)).size > 1;
   const m = { t: 24, r: 8, b: 30, l: 8 };
   const svg = svgEl('svg', { width: W, height: H, viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': 'Rentabilidad mensual' });
   const vals = months.map((x) => x.r);
@@ -348,7 +372,7 @@ function barChart(host, months) {
     v.textContent = pct(mo.r, 1);
     g.appendChild(v);
     const l = svgEl('text', { x: cx, y: H - 8, 'text-anchor': 'middle', class: 'lab' });
-    l.textContent = MONTHS[mo.m] + (mo.partial ? '*' : '');
+    l.textContent = MONTHS[mo.m] + (varios && (mo.m === 0 || i === 0) ? ' ' + String(mo.y).slice(2) : '') + (mo.partial ? '*' : '');
     g.appendChild(l);
     const hit = svgEl('rect', { x: m.l + bw * i, y: 0, width: bw, height: H, fill: 'transparent' });
     hit.addEventListener('mousemove', (e) =>
@@ -454,7 +478,12 @@ function renderPerf() {
       },
     });
     document.getElementById('perfNote').textContent = 'Rentabilidad ponderada por tiempo: las aportaciones y retiradas no cuentan como rendimiento.';
-  } else {
+  }
+  // Aviso del tramo reconstruido (historico.json), solo si se ha enlazado
+  const hn = document.getElementById('histNote'), hi = S.raw.historico;
+  hn.hidden = !hi || perfMode !== 'pct';
+  if (hi) hn.textContent = 'Hasta el ' + fmtDate(parseDate(hi.hasta)) + ', rentabilidad reconstruida con las operaciones y los cierres de mercado. En 2025 el capital invertido era pequeño: los movimientos de esos meses pesan más en el porcentaje que en euros.';
+  if (perfMode !== 'pct') {
     lineChart(host, S.pat.map((p) => ({ x: p.date, y: p.total })), {
       label: 'Patrimonio total semanal', left: 64,
       fmtAxis: (t) => nf(0).format(t / 1000) + ' k€',
@@ -508,7 +537,7 @@ function renderRisk() {
   document.getElementById('riskKpis').innerHTML = k
     .map((x) => `<div class="kpi ${x.fill ? 'fill' : ''}"><dt>${x.t}</dt><dd>${x.v}</dd><small>${esc(x.s)}</small></div>`).join('');
   document.getElementById('riskNote').textContent =
-    `Calculado con ${R.n} semanas. Con menos de un año de historia, las cifras anualizadas son orientativas.`;
+    `Calculado con ${R.n} semanas.` + (R.n < 52 ? ' Con menos de un año de historia, las cifras anualizadas son orientativas.' : '');
 }
 
 function renderAlloc() {
@@ -689,7 +718,7 @@ function syncSeg() {
   const saved = store.get();
   let data;
   try {
-    [data] = await Promise.all([loadData(saved), loadTesis()]);
+    [data] = await Promise.all([loadData(saved), loadTesis(), loadHist()]);
     if (data.error === 'clave') { store.set(null); data = await loadData(); }
     if (data.error) throw new Error(data.detalle || data.error);
   } catch (err) {

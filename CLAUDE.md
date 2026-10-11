@@ -20,6 +20,12 @@ Web estática publicada con GitHub Pages en https://gmanaua.github.io/vela-capit
 - Si `bench` falta o es `null`, la web oculta la línea discontinua, la tarjeta "Frente al MSCI World" y la beta/correlación.
 - Si no aparece en la web: comprobar que la URL `/exec` devuelve `bench` y que se publicó una "Nueva versión" de la implementación tras el último cambio del script.
 
+## Histórico anterior a la Sheet
+- La pestaña CARTERA empieza el 6/3/2026. Lo anterior (desde el 3/3/2025) está en `historico.json`: rentabilidad semanal y MSCI World, solo porcentajes.
+- Lo genera `herramientas/historico.js` a partir del CSV "Todas las transacciones" de Portfolio Performance y cierres de Yahoo: reconstruye la cartera día a día (solo lo invertido, sin liquidez) y calcula la rentabilidad ponderada por tiempo. El CSV tiene importes en euros y NO se sube.
+- `app.js` (`conHistorico`) lo pone delante de la serie de la Sheet solo si su última fecha coincide con la primera de CARTERA; si no enlaza, se ignora y la web funciona como antes.
+- No usar el gráfico de rendimiento de Portfolio Performance como fuente: incluye liquidez y tiene cotizaciones erróneas (marzo 2025, 17/7/2026).
+
 ## Cambios
 - `app.js` se carga con `?v=<hash>` para evitar cachés: si se edita `app.js`, actualizar ese parámetro en `index.html`.
 - Las cifras usan formato es-ES (coma decimal, punto de miles, signo menos tipográfico).
