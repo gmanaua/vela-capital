@@ -421,10 +421,10 @@ function sphere(canvas) {
       const depth = (Z1 + 1) / 2;
       const px = cx + X1 * R, py = cy + Y1 * R;
       if (py > H + 4) continue;
-      const s = 0.5 + depth * 1.3;
+      const s = 0.9 + depth * 2.1; // diámetro: los puntos cercanos son mayores
       ctx.globalAlpha = 0.1 + depth * 0.75;
       ctx.fillStyle = k < 0.08 ? '#d98a3d' : k < 0.14 ? '#7b80d6' : dotInk;
-      ctx.fillRect(px - s / 2, py - s / 2, s, s);
+      ctx.beginPath(); ctx.arc(px, py, s / 2, 0, 6.2832); ctx.fill();
     }
     ctx.globalAlpha = 1;
     a += 0.0016;
