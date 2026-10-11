@@ -421,7 +421,7 @@ function sphere(canvas) {
       const depth = (Z1 + 1) / 2;
       const px = cx + X1 * R, py = cy + Y1 * R;
       if (py > H + 4) continue;
-      const s = 0.9 + depth * 2.1; // diámetro: los puntos cercanos son mayores
+      const s = (2.25 + depth * 5.25) * (R / 520); // diámetro: mayor en los puntos cercanos y proporcional al tamaño de la esfera
       ctx.globalAlpha = 0.1 + depth * 0.75;
       ctx.fillStyle = k < 0.08 ? '#d98a3d' : k < 0.14 ? '#7b80d6' : dotInk;
       ctx.beginPath(); ctx.arc(px, py, s / 2, 0, 6.2832); ctx.fill();
