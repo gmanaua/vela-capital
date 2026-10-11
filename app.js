@@ -110,7 +110,7 @@ function conHistorico(d) {
     const b0 = 1 + h.bench.acum[h.bench.acum.length - 1];
     bench = { ...d.bench, acum: [...h.bench.acum, ...d.bench.acum.slice(1).map((x) => (x == null ? null : b0 * (1 + x) - 1))] };
   }
-  return { ...d, cartera: [...h.cartera, ...d.cartera.slice(1)], bench, historico: { desde: h.desde, hasta: h.hasta } };
+  return { ...d, cartera: [...h.cartera, ...d.cartera.slice(1)], bench };
 }
 
 function derive(d) {
@@ -479,10 +479,6 @@ function renderPerf() {
     });
     document.getElementById('perfNote').textContent = 'Rentabilidad ponderada por tiempo: las aportaciones y retiradas no cuentan como rendimiento.';
   }
-  // Aviso del tramo reconstruido (historico.json), solo si se ha enlazado
-  const hn = document.getElementById('histNote'), hi = S.raw.historico;
-  hn.hidden = !hi || perfMode !== 'pct';
-  if (hi) hn.textContent = 'Hasta el ' + fmtDate(parseDate(hi.hasta)) + ', rentabilidad reconstruida con las operaciones y los cierres de mercado. En 2025 el capital invertido era pequeño: los movimientos de esos meses pesan más en el porcentaje que en euros.';
   if (perfMode !== 'pct') {
     lineChart(host, S.pat.map((p) => ({ x: p.date, y: p.total })), {
       label: 'Patrimonio total semanal', left: 64,
