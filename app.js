@@ -397,12 +397,21 @@ function sphere(canvas) {
     P.push([Math.cos(th) * rad, y, Math.sin(th) * rad, Math.random()]);
   }
   let W, H, R, cx, cy, dpr;
+  // zona del logo, el título y la cinta: ahí los puntos se atenúan para no competir con el texto
+  let tx = 0, ty = 0, thw = 0, thh = 0;
+  const copy = canvas.parentElement.querySelector('.hero-copy');
   const size = () => {
     dpr = Math.min(window.devicePixelRatio || 1, 2);
     W = canvas.clientWidth; H = canvas.clientHeight;
     canvas.width = W * dpr; canvas.height = H * dpr;
     R = Math.min(W * 0.42, 520);
     cx = W / 2; cy = H - R * 0.12;
+    if (copy && copy.children.length) {
+      const c0 = canvas.getBoundingClientRect();
+      let l = Infinity, t = Infinity, r = -Infinity, b = -Infinity;
+      for (const el of copy.children) { const q = el.getBoundingClientRect(); l = Math.min(l, q.left); t = Math.min(t, q.top); r = Math.max(r, q.right); b = Math.max(b, q.bottom); }
+      tx = (l + r) / 2 - c0.left; ty = (t + b) / 2 - c0.top; thw = (r - l) / 2; thh = (b - t) / 2;
+    }
   };
   size();
   window.addEventListener('resize', size);
@@ -422,7 +431,9 @@ function sphere(canvas) {
       const px = cx + X1 * R, py = cy + Y1 * R;
       if (py > H + 4) continue;
       const s = (2.25 + depth * 5.25) * (R / 520); // diámetro: mayor en los puntos cercanos y proporcional al tamaño de la esfera
-      ctx.globalAlpha = 0.1 + depth * 0.75;
+      // dentro de la zona de texto la opacidad baja a la mitad, con un borde difuminado de 70 px
+      const lejos = Math.hypot(Math.max(0, Math.abs(px - tx) - thw), Math.max(0, Math.abs(py - ty) - thh));
+      ctx.globalAlpha = (0.1 + depth * 0.75) * (thw ? 0.5 + 0.5 * Math.min(1, lejos / 70) : 1);
       ctx.fillStyle = k < 0.08 ? '#d98a3d' : k < 0.14 ? '#7b80d6' : dotInk;
       ctx.beginPath(); ctx.arc(px, py, s / 2, 0, 6.2832); ctx.fill();
     }
