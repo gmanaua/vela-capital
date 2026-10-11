@@ -92,7 +92,19 @@ small{font-size:12px;letter-spacing:-.36px;color:var(--muted);display:block}
 .hero h1{text-wrap:balance;font-weight:400;font-size:clamp(40px,7.2vw,54px);line-height:1;letter-spacing:-.03em;color:var(--ink)}
 .hero h1 .num{display:inline-block;min-width:5.2ch;text-align:right}
 .hero p{font-size:clamp(18px,2.2vw,24px);line-height:1.4;letter-spacing:-.24px;margin:24px auto 0;max-width:36ch;text-wrap:balance}
-#sphere{position:absolute;left:0;right:0;bottom:0;width:100%;height:68%;z-index:1}
+#sphere{position:absolute;inset:0;width:100%;height:100%;z-index:1}
+/* título de portada: mismo formato que la marca de la cabecera, en grande */
+.hero h1.brand{font-weight:500;font-size:clamp(27px,7.4vw,76px);line-height:1;letter-spacing:-.03em;white-space:nowrap}
+/* cinta en movimiento con los nombres, en el mismo tipo y color */
+.ticker{max-width:780px;margin:clamp(28px,4.5vh,48px) auto 0;border-top:1px solid var(--hair);border-bottom:1px solid var(--hair);font-size:15px;letter-spacing:-.2px;overflow:hidden;-webkit-mask-image:linear-gradient(90deg,transparent,#000 9%,#000 91%,transparent);mask-image:linear-gradient(90deg,transparent,#000 9%,#000 91%,transparent)}
+.ticker-t{display:flex;width:max-content;list-style:none;animation:ticker 44s linear infinite}
+.ticker-t li{white-space:nowrap;padding:12px 0;display:flex;align-items:center}
+.ticker-t li::after{content:"";width:4px;height:4px;margin:0 22px;background:var(--ash);transform:rotate(45deg)}
+.ticker-t .w-b{font-weight:500}
+.ticker-t .w-up{font-size:12.5px;font-weight:500;letter-spacing:.16em}
+.ticker:hover .ticker-t{animation-play-state:paused}
+@keyframes ticker{to{transform:translateX(-50%)}}
+@media (prefers-reduced-motion:reduce){.ticker-t{animation:none}}
 
 /* secciones */
 section.sec{padding:var(--sec) 0}
@@ -292,7 +304,7 @@ footer .wrap{position:relative;z-index:1}
 .mark img{display:block;height:25px;width:auto}
 .mark img,.hero-logo{filter:var(--logo)}
 .astop{stop-color:var(--area)}
-.hero-logo{display:block;width:clamp(220px,30vw,360px);height:auto;margin:0 auto 28px}
+.hero-logo{display:block;width:clamp(170px,22vw,260px);height:auto;margin:0 auto 26px}
 .hero-stat{margin-top:32px;font-size:16px}
 .hero-stat a{display:inline-flex;align-items:baseline;gap:8px;border-bottom:1px solid var(--ink);padding-bottom:3px}
 .hero-stat a:hover{text-decoration:none;color:var(--carbon)}
@@ -314,7 +326,6 @@ footer .wrap{position:relative;z-index:1}
 @media (max-width:900px){.helm{grid-template-columns:1fr;gap:40px}.portrait{max-width:420px}}
 @media (max-width:600px){
   .hero{min-height:max(600px,92svh)}
-  #sphere{height:58%}
 }
 .load-err{position:fixed;z-index:80;left:50%;bottom:24px;transform:translateX(-50%);background:var(--white);border:1px solid var(--ink);padding:12px 16px;font-size:14px;max-width:calc(100% - 32px)}
 body.loading main section:not(.hero),body.failed main section:not(.hero){visibility:hidden}
@@ -385,8 +396,8 @@ button.li{background:none;border:0;border-bottom:1px solid var(--ink);cursor:poi
   <section class="hero" id="inicio">
     <div class="hero-copy">
       <img class="hero-logo" src="assets/logo.png" alt="Logotipo de Vela Capital Management" width="120" height="80">
-      <h1>Rumbo al largo plazo.</h1>
-      <p>Una cartera personal construida semana a semana.</p>
+      <h1 class="brand">Vela Capital Management</h1>
+      <div class="ticker"><ul class="ticker-t"><li class="w-b">Trade Republic</li><li>Interactive Brokers</li><li class="w-b">MyInvestor</li><li>iShares</li><li class="w-up">BLACKROCK</li><li class="w-b">Fidelity</li><li>Vanguard</li><li class="w-up">COBAS</li><li class="w-b">Robeco</li><li>Neuberger Berman</li><li aria-hidden="true" class="w-b">Trade Republic</li><li aria-hidden="true">Interactive Brokers</li><li aria-hidden="true" class="w-b">MyInvestor</li><li aria-hidden="true">iShares</li><li aria-hidden="true" class="w-up">BLACKROCK</li><li aria-hidden="true" class="w-b">Fidelity</li><li aria-hidden="true">Vanguard</li><li aria-hidden="true" class="w-up">COBAS</li><li aria-hidden="true" class="w-b">Robeco</li><li aria-hidden="true">Neuberger Berman</li></ul></div>
     </div>
     <canvas id="sphere" aria-hidden="true"></canvas>
   </section>
