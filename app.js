@@ -522,6 +522,28 @@ function renderPerf() {
     <div><dt>Peor semana</dt><dd>${delta(worst.r, 2)}<small>${fmtDate(worst.date)}</small></dd></div>
     <div><dt>Semanas en positivo</dt><dd>${up} de ${c.length - 1}</dd></div>`;
   barChart(document.getElementById('monthChart'), S.months);
+  renderYears();
+}
+
+// Rentabilidad por años naturales: cada año parte del último cierre semanal del año anterior
+function renderYears() {
+  const c = S.c, b = S.bench, ultimo = c[c.length - 1];
+  const years = [];
+  for (let y = c[0].date.getFullYear(); y <= ultimo.date.getFullYear(); y++) {
+    let i0 = 0, i1 = -1;
+    c.forEach((p, i) => { const py = p.date.getFullYear(); if (py < y) i0 = i; if (py === y) i1 = i; });
+    if (i1 <= i0) continue;
+    const r = (1 + c[i1].acum) / (1 + c[i0].acum) - 1;
+    const rb = b && b.acum[i0] != null && b.acum[i1] != null ? (1 + b.acum[i1]) / (1 + b.acum[i0]) - 1 : null;
+    const nota = y === c[0].date.getFullYear() && c[0].date.getMonth() + c[0].date.getDate() > 1 ? 'Desde el ' + fmtDate(c[0].date)
+      : y === ultimo.date.getFullYear() && ultimo.date.getMonth() < 11 ? 'En curso, hasta el ' + fmtDate(ultimo.date) : 'Año completo';
+    years.push({ y, r, rb, nota, meses: S.months.filter((m) => m.y === y) });
+  }
+  document.getElementById('yearStats').innerHTML = years.map((x) => `
+    <div><dt>${x.y}</dt><dd>${delta(x.r, 2)}<small>${x.nota}</small>${x.rb != null ? `<small>${b.nombre} ${pct(x.rb, 2)} · ${diffPP(x.r - x.rb)}</small>` : ''}</dd></div>`).join('');
+  const celda = (m) => (m ? `<td class="num ${m.r > 0 ? 'pos' : m.r < 0 ? 'neg' : ''}">${sign(m.r)}${nf(1).format(Math.abs(m.r * 100))}${m.partial ? '*' : ''}</td>` : '<td class="num vac">·</td>');
+  document.getElementById('yearTable').innerHTML = `<thead><tr><th>Año</th>${MONTHS.map((m) => `<th class="num">${m}</th>`).join('')}<th class="num">Año</th>${b ? `<th class="num">${b.nombre}</th>` : ''}</tr></thead><tbody>${years.map((x) =>
+    `<tr><td>${x.y}</td>${MONTHS.map((_, i) => celda(x.meses.find((m) => m.m === i))).join('')}<td class="num tot">${pct(x.r, 1)}</td>${b ? `<td class="num">${x.rb != null ? pct(x.rb, 1) : '—'}</td>` : ''}</tr>`).join('')}</tbody>`;
 }
 
 function renderRisk() {

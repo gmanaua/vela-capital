@@ -196,6 +196,16 @@ td{padding:12px 10px;border-bottom:1px solid var(--hair);vertical-align:middle}
 .pn{display:flex;gap:12px;align-items:flex-start}
 .pn .sw{margin-top:5px}
 tbody tr:hover{background:var(--row)}
+/* rentabilidad por años: una fila por año, una columna por mes */
+.ytab{min-width:820px}
+.ytab th,.ytab td{padding:10px 8px}
+.ytab td:first-child{font-size:24px;letter-spacing:-.6px}
+.ytab .pos{background:color-mix(in srgb,var(--apricot) 42%,transparent)}
+.ytab .neg{background:color-mix(in srgb,var(--iris) 42%,transparent)}
+.ytab .vac{color:var(--ash)}
+.ytab .tot{font-weight:500;border-left:1px solid var(--ink)}
+.ytab tbody tr:hover{background:none}
+#yearStats small+small{margin-top:2px}
 .wbar{display:inline-block;width:56px;height:4px;background:var(--track);margin-right:10px;vertical-align:middle}
 .wbar i{display:block;height:100%;background:var(--ink)}
 
@@ -297,6 +307,7 @@ footer .wrap{position:relative;z-index:1}
   .brokers .wbar{display:none}
   .hide-s{display:none}
   table{min-width:0}
+  .ytab{min-width:760px}
   .wbar{width:28px;margin-right:6px}
   .kpi dd{font-size:28px}
 }
@@ -462,6 +473,12 @@ button.li{background:none;border:0;border-bottom:1px solid var(--ink);cursor:poi
         <p class="note">* Mes en curso.</p>
         <div class="chart" id="monthChart"></div>
       </div>
+      <div class="month-wrap">
+        <h3>Rentabilidad por años</h3>
+        <dl class="stats" id="yearStats" style="margin-top:12px"></dl>
+        <div class="tbl-wrap" style="margin-top:24px"><table class="ytab" id="yearTable"></table></div>
+        <p class="note" style="margin-top:10px">Rentabilidad de cada mes, en %. * Mes en curso.</p>
+      </div>
     </div>
   </section>
 
@@ -592,7 +609,7 @@ button.li{background:none;border:0;border-bottom:1px solid var(--ink);cursor:poi
 </div>
 
 <script>window.VELA_API = "https://script.google.com/macros/s/AKfycbxrb1sMOMEzOZFFB7YRKoFx7_sXQNclwhNSeVmtrkcwODzR_KAxquxxIwFJtw6z7-1Upw/exec";</script>
-<script src="app.js?v=42d0d10b" defer></script>
+<script src="app.js?v=353a1bf6" defer></script>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 </body>
 </html>
