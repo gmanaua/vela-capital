@@ -139,6 +139,7 @@ section.sec{padding:var(--sec) 0}
 .tip .row{display:flex;justify-content:space-between;gap:16px}
 
 .perf-top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.segs{display:flex;gap:8px;flex-wrap:wrap}
 .seg{display:inline-flex;border:1px solid var(--ink)}
 .seg button{height:36px;padding:0 14px;font-size:14px}
 .seg button[aria-pressed=true]{background:var(--ink);color:var(--white)}
@@ -440,9 +441,16 @@ button.li{background:none;border:0;border-bottom:1px solid var(--ink);cursor:poi
     <div class="wrap">
       <div class="sec-h"><h2>Rendimiento</h2></div>
       <div class="perf-top">
-        <div class="seg" role="group" aria-label="Medida">
-          <button data-mode="pct">Rentabilidad</button>
-          <button data-mode="eur" title="Requiere acceso privado">Patrimonio en €</button>
+        <div class="segs">
+          <div class="seg" role="group" aria-label="Medida">
+            <button data-mode="pct">Rentabilidad</button>
+            <button data-mode="eur" title="Requiere acceso privado">Patrimonio en €</button>
+          </div>
+          <div class="seg" role="group" aria-label="Periodo">
+            <button data-range="todo">Todo</button>
+            <button data-range="1a">1 año</button>
+            <button data-range="ytd">YTD</button>
+          </div>
         </div>
         <span class="note" id="perfNote"></span>
       </div>
@@ -584,7 +592,7 @@ button.li{background:none;border:0;border-bottom:1px solid var(--ink);cursor:poi
 </div>
 
 <script>window.VELA_API = "https://script.google.com/macros/s/AKfycbxrb1sMOMEzOZFFB7YRKoFx7_sXQNclwhNSeVmtrkcwODzR_KAxquxxIwFJtw6z7-1Upw/exec";</script>
-<script src="app.js?v=ca4ab43d" defer></script>
+<script src="app.js?v=42d0d10b" defer></script>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 </body>
 </html>

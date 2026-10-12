@@ -462,7 +462,7 @@ function countUp(el, to, fmt, dur = 1600) {
 /* ---------- render ---------- */
 // Sin acceso privado, los importes se sustituyen por una cifra ficticia difuminada
 const money = (x, f = eur) => (S.priv ? f(x) : '0.000 €');
-let S, unlocked = false, perfMode = 'pct', sortKey = 'peso', sortDir = -1;
+let S, unlocked = false, perfMode = 'pct', perfRange = 'todo', sortKey = 'peso', sortDir = -1;
 
 function renderHero() {
   document.querySelectorAll('[data-updated]').forEach((e) => (e.textContent = fmtDate(S.updated)));
@@ -471,14 +471,25 @@ function renderHero() {
 function renderPerf() {
   const host = document.getElementById('perfChart');
   const lastC = S.c[S.c.length - 1];
+  // Periodo: el punto base es el último cierre anterior al periodo (fin del año pasado para YTD, un año atrás para 1 año)
+  let i0 = 0;
+  if (perfRange !== 'todo') {
+    const corte = perfRange === 'ytd' ? new Date(lastC.date.getFullYear(), 0, 1) : new Date(lastC.date.getFullYear() - 1, lastC.date.getMonth(), lastC.date.getDate() + 1);
+    S.c.forEach((p, i) => { if (p.date < corte) i0 = i; });
+    i0 = Math.min(i0, S.c.length - 2);
+  }
+  const base = 1 + S.c[i0].acum;
+  const c = S.c.slice(i0).map((p) => ({ ...p, acum: (1 + p.acum) / base - 1 }));
+  const bAcum = S.bench && S.bench.acum[i0] != null ? S.bench.acum.slice(i0).map((x) => (x == null ? null : (1 + x) / (1 + S.bench.acum[i0]) - 1)) : null;
+  const last = c[c.length - 1];
   if (perfMode === 'pct') {
-    const bench = S.bench;
+    const bench = bAcum ? { ...S.bench, acum: bAcum } : null;
     const narrow = host.clientWidth < 560;
     const lg = document.getElementById('perfLegend'); lg.hidden = !(bench && narrow);
     if (bench) document.getElementById('refName').textContent = bench.nombre;
-    lineChart(host, S.c.map((p, i) => ({ x: p.date, y: p.acum, p, i })), {
+    lineChart(host, c.map((p, i) => ({ x: p.date, y: p.acum, p, i })), {
       label: bench ? 'Rentabilidad acumulada semanal frente al MSCI World' : 'Rentabilidad acumulada semanal', zero: true, left: 52,
-      ref: bench ? S.c.map((p, i) => ({ x: p.date, y: bench.acum[i] })) : null,
+      ref: bench ? c.map((p, i) => ({ x: p.date, y: bench.acum[i] })) : null,
       right: bench && !narrow ? 104 : 12,
       mainLabel: narrow ? '' : 'Vela', refLabel: narrow ? '' : bench ? bench.nombre : '',
       fmtAxis: (t) => nf(0).format(t * 100) + ' %',
@@ -491,7 +502,8 @@ function renderPerf() {
     document.getElementById('perfNote').textContent = 'Rentabilidad ponderada por tiempo: las aportaciones y retiradas no cuentan como rendimiento.';
   }
   if (perfMode !== 'pct') {
-    lineChart(host, S.pat.map((p) => ({ x: p.date, y: p.total })), {
+    const pat = S.pat.filter((p) => p.date >= c[0].date);
+    lineChart(host, (pat.length > 1 ? pat : S.pat).map((p) => ({ x: p.date, y: p.total })), {
       label: 'Patrimonio total semanal', left: 64,
       fmtAxis: (t) => nf(0).format(t / 1000) + ' k€',
       tip: (b) => `<b>${fmtDate(b.x)}</b><span class="row">${eur(b.y)}</span>`,
@@ -499,15 +511,16 @@ function renderPerf() {
     document.getElementById('perfLegend').hidden = true;
     document.getElementById('perfNote').textContent = 'Patrimonio total: inversiones más liquidez, incluidas las aportaciones.';
   }
-  const best = [...S.c].slice(1).sort((a, b) => b.r - a.r)[0];
-  const worst = [...S.c].slice(1).sort((a, b) => a.r - b.r)[0];
-  const up = S.c.slice(1).filter((p) => p.r > 0).length;
+  const best = [...c].slice(1).sort((a, b) => b.r - a.r)[0];
+  const worst = [...c].slice(1).sort((a, b) => a.r - b.r)[0];
+  const up = c.slice(1).filter((p) => p.r > 0).length;
+  const bLast = bAcum ? bAcum[bAcum.length - 1] : null;
   document.getElementById('perfStats').innerHTML = `
-    <div><dt>Acumulada</dt><dd>${delta(lastC.acum, 2)}</dd></div>
-    ${S.bench && S.bench.acum[S.c.length - 1] != null ? `<div><dt>Frente al ${S.bench.nombre}</dt><dd>${diffPP(lastC.acum - S.bench.acum[S.c.length - 1])}<small>${S.bench.nombre} ${pct(S.bench.acum[S.c.length - 1], 2)} en el mismo periodo</small></dd></div>` : ''}
+    <div><dt>Acumulada</dt><dd>${delta(last.acum, 2)}<small>Desde el ${fmtDate(c[0].date)}</small></dd></div>
+    ${bLast != null ? `<div><dt>Frente al ${S.bench.nombre}</dt><dd>${diffPP(last.acum - bLast)}<small>${S.bench.nombre} ${pct(bLast, 2)} en el mismo periodo</small></dd></div>` : ''}
     <div><dt>Mejor semana</dt><dd>${delta(best.r, 2)}<small>${fmtDate(best.date)}</small></dd></div>
     <div><dt>Peor semana</dt><dd>${delta(worst.r, 2)}<small>${fmtDate(worst.date)}</small></dd></div>
-    <div><dt>Semanas en positivo</dt><dd>${up} de ${S.c.length - 1}</dd></div>`;
+    <div><dt>Semanas en positivo</dt><dd>${up} de ${c.length - 1}</dd></div>`;
   barChart(document.getElementById('monthChart'), S.months);
 }
 
@@ -705,6 +718,7 @@ function renderAll(first) {
 }
 function syncSeg() {
   document.querySelectorAll('.seg button[data-mode]').forEach((b) => b.setAttribute('aria-pressed', b.dataset.mode === perfMode));
+  document.querySelectorAll('.seg button[data-range]').forEach((b) => b.setAttribute('aria-pressed', b.dataset.range === perfRange));
 }
 
 /* ---------- arranque ---------- */
@@ -761,6 +775,10 @@ function syncSeg() {
     b.addEventListener('click', () => {
       if (b.disabled) return;
       perfMode = b.dataset.mode; syncSeg(); delete document.getElementById('perfChart').dataset.drawn; renderPerf();
+    }));
+  document.querySelectorAll('.seg button[data-range]').forEach((b) =>
+    b.addEventListener('click', () => {
+      perfRange = b.dataset.range; syncSeg(); delete document.getElementById('perfChart').dataset.drawn; renderPerf();
     }));
   syncSeg();
   document.getElementById('expTabs').addEventListener('click', (e) => {
